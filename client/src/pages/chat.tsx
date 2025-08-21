@@ -143,6 +143,8 @@ export default function Chat() {
       attachments: FileAttachment[];
       conversationId?: string;
     }) => {
+      console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
+      
       const formData = new FormData();
       formData.append('message', message);
       // Use userId from localStorage if available, otherwise fallback to default
@@ -153,39 +155,67 @@ export default function Chat() {
 
       // Add file attachments
       attachments.forEach((attachment, index) => {
-        const byteCharacters = atob(attachment.data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        try {
+          const byteCharacters = atob(attachment.data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: attachment.mimeType });
+          const file = new File([blob], attachment.filename, { type: attachment.mimeType });
+          formData.append('files', file);
+        } catch (error) {
+          console.error('Error processing attachment:', attachment.filename, error);
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: attachment.mimeType });
-        const file = new File([blob], attachment.filename, { type: attachment.mimeType });
-        formData.append('files', file);
       });
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        body: formData,
-      });
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send message');
+        console.log('API Response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
+          let errorMessage = 'Failed to send message';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.message || errorMessage;
+          } catch (e) {
+            errorMessage = `Server error (${response.status})`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('API Response data:', data);
+        return data;
+      } catch (error) {
+        console.error('Network/API Error:', error);
+        throw error;
       }
-
-      return response.json();
     },
     onSuccess: (data, variables) => {
-      // Save to localStorage
+      console.log('Message sent successfully:', data);
+      
+      // Save to localStorage with error handling
       if (data.conversationId && userData) {
-        const conversationTitle = conversationsData?.conversations?.find((c: any) => c.id === data.conversationId)?.title || "Percakapan Baru";
-        localStorageHook.addChatToHistory({
-          conversationId: data.conversationId,
-          title: conversationTitle,
-          lastMessage: variables.message.substring(0, 50) + (variables.message.length > 50 ? "..." : ""),
-          timestamp: new Date().toISOString()
-        });
+        try {
+          const conversationTitle = conversationsData?.conversations?.find((c: any) => c.id === data.conversationId)?.title || "Percakapan Baru";
+          localStorageHook.addChatToHistory({
+            conversationId: data.conversationId,
+            title: conversationTitle,
+            lastMessage: variables.message.substring(0, 50) + (variables.message.length > 50 ? "..." : ""),
+            timestamp: new Date().toISOString()
+          });
+        } catch (error) {
+          console.warn("Failed to save to localStorage:", error);
+          // Continue without localStorage - don't block the chat
+        }
 
         // Get updated messages and save to localStorage
         setTimeout(async () => {
@@ -193,10 +223,14 @@ export default function Chat() {
             const response = await fetch(`/api/conversations/${data.conversationId}/messages`);
             if (response.ok) {
               const messages = await response.json();
-              localStorageHook.saveMessages(data.conversationId, messages);
+              try {
+                localStorageHook.saveMessages(data.conversationId, messages);
+              } catch (error) {
+                console.warn("Failed to cache messages to localStorage:", error);
+              }
             }
           } catch (error) {
-            console.error("Failed to cache messages:", error);
+            console.warn("Failed to fetch updated messages:", error);
           }
         }, 500);
       }
@@ -212,9 +246,10 @@ export default function Chat() {
       setIsTyping(false); // Ensure typing indicator is turned off
     },
     onError: (error) => {
+      console.error('Send message error:', error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Gagal Mengirim Pesan",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengirim pesan",
         variant: "destructive",
       });
       setIsTyping(false); // Ensure typing indicator is turned off on error

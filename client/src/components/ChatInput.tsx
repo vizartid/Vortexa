@@ -38,10 +38,19 @@ export function ChatInput({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if ((message.trim() || attachments.length > 0) && !disabled) {
-      onSendMessage(message.trim(), attachments);
+    const trimmedMessage = message.trim();
+    
+    if ((trimmedMessage || attachments.length > 0) && !disabled) {
+      console.log('Submitting message:', { message: trimmedMessage, attachments: attachments.length });
+      onSendMessage(trimmedMessage, attachments);
       setMessage("");
       setAttachments([]);
+    } else {
+      console.log('Message not submitted:', { 
+        hasMessage: !!trimmedMessage, 
+        hasAttachments: attachments.length > 0, 
+        disabled 
+      });
     }
   };
 

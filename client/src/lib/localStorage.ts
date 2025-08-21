@@ -1,4 +1,3 @@
-
 // Utility functions for cookies operations
 export interface UserData {
   userId: string;
@@ -119,7 +118,7 @@ class CookiesManager {
     try {
       const history = this.getChatHistory();
       const existingIndex = history.findIndex(c => c.conversationId === chat.conversationId);
-      
+
       if (existingIndex >= 0) {
         history[existingIndex] = chat;
       } else {
@@ -199,7 +198,7 @@ class CookiesManager {
       let totalSize = 0;
       let itemCount = 0;
       const cookies = document.cookie.split(';');
-      
+
       cookies.forEach(cookie => {
         const eqPos = cookie.indexOf('=');
         const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
