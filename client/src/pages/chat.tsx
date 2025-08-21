@@ -13,7 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
-import logoImage from "@assets/Logo-vortexa-white.png?url";
+import logoImage from "/attached_assets/Logo-vortexa-white.png";
 import { useLocalStorage, UserData } from "@/lib/localStorage";
 
 export default function Chat() {

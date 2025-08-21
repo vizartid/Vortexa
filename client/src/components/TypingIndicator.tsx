@@ -1,5 +1,5 @@
 import { Bot } from "lucide-react";
-import logoImage from "@assets/Logo-vortexa-white.png?url";
+import logoImage from "/attached_assets/Logo-vortexa-white.png";
 
 export function TypingIndicator() {
   return (

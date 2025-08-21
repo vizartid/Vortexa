@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Bot, ExternalLink, MessageCircle, Info, Github, Linkedin, Globe, Mail } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { DotPatternBackground } from "@/components/DotPatternBackground";
-import logoImage from "@assets/Logo-vortexa-white.png?url";
+import logoImage from "/attached_assets/Logo-vortexa-white.png";
 
 export default function Landing() {
   const [, setLocation] = useLocation();

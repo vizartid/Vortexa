@@ -3,7 +3,7 @@ import { Bot, User, Copy, Check, Image, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import logoImage from "@assets/Logo-vortexa-white.png?url";
+import logoImage from "/attached_assets/Logo-vortexa-white.png";
 
 interface ChatMessageProps {
   message: Message;
