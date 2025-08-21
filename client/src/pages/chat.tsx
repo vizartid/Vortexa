@@ -14,6 +14,7 @@ import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
+import { useLocalStorage, UserData } from "@/lib/localStorage";
 
 export default function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,19 +26,112 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
+  const localStorageHook = useLocalStorage();
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   // Mock data for sidebar conversations (replace with actual data fetching if needed)
+  // This mock data will be enhanced by localStorage later.
   const conversations = [
     { id: "conv-1", title: "Conversation 1", lastMessage: "Hello there!" },
     { id: "conv-2", title: "Conversation 2", lastMessage: "How can I help you?" },
   ];
   const activeConversationId = currentConversationId; // This should be managed by your state
 
-  const { data: messagesData, isLoading } = useQuery({
-    queryKey: ["/api/conversations", currentConversationId, "messages"],
-    enabled: !!currentConversationId,
-    select: (data: any) => data.messages as Message[],
+  // Initialize user data from localStorage
+  useEffect(() => {
+    const user = localStorageHook.getUserData();
+    setUserData(user);
+
+    // Show welcome message for new users
+    if (user.visitCount === 1) {
+      toast({
+        title: "Selamat datang di Vortexa!",
+        description: `Anda adalah pengguna baru dengan ID: ${user.userId.substring(0, 10)}...`,
+        duration: 5000,
+      });
+    } else {
+      toast({
+        title: "Selamat datang kembali!",
+        description: `Kunjungan ke-${user.visitCount}. Terakhir: ${new Date(user.lastVisit).toLocaleDateString('id-ID')}`,
+        duration: 3000,
+      });
+    }
+  }, []);
+
+  // Fetch conversations
+  const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
+    queryKey: ["/api/conversations"],
+    queryFn: async () => {
+      const response = await fetch("/api/conversations");
+      if (!response.ok) {
+        throw new Error("Failed to fetch conversations");
+      }
+      const data = await response.json();
+
+      // Sync with localStorage
+      if (data.conversations && userData) {
+        data.conversations.forEach((conv: any) => {
+          localStorageHook.addChatToHistory({
+            conversationId: conv.id,
+            title: conv.title,
+            lastMessage: conv.lastMessage || "Percakapan dimulai",
+            timestamp: new Date().toISOString()
+          });
+        });
+      }
+
+      return data;
+    },
+    enabled: !!userData,
   });
+
+
+  const messagesQuery = useQuery({
+    queryKey: ["/api/conversations", currentConversationId, "messages"],
+    queryFn: async () => {
+      // First try to get from localStorage for faster loading
+      if (currentConversationId) {
+        const cachedMessages = localStorageHook.getMessages(currentConversationId);
+        if (cachedMessages.length > 0) {
+          // Return cached messages first, then fetch fresh data in background
+          setTimeout(async () => {
+            try {
+              const response = await fetch(`/api/conversations/${currentConversationId}/messages`);
+              if (response.ok) {
+                const freshData = await response.json();
+                localStorageHook.saveMessages(currentConversationId, freshData);
+                queryClient.setQueryData(
+                  ["/api/conversations", currentConversationId, "messages"],
+                  freshData
+                );
+              }
+            } catch (error) {
+              console.error("Background refresh failed:", error);
+            }
+          }, 100);
+          return cachedMessages;
+        }
+      }
+
+      // Fetch from server if no cache
+      const response = await fetch(`/api/conversations/${currentConversationId}/messages`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch messages");
+      }
+      const data = await response.json();
+
+      // Save to localStorage
+      if (currentConversationId) {
+        localStorageHook.saveMessages(currentConversationId, data);
+      }
+
+      return data;
+    },
+    enabled: !!currentConversationId,
+  });
+
+  const messagesData = messagesQuery.data as Message[] || [];
+  const isLoading = messagesQuery.isLoading;
 
   const sendMessageMutation = useMutation({
     mutationFn: async ({
@@ -51,7 +145,8 @@ export default function Chat() {
     }) => {
       const formData = new FormData();
       formData.append('message', message);
-      formData.append('userId', 'default-user');
+      // Use userId from localStorage if available, otherwise fallback to default
+      formData.append('userId', userData?.userId || 'default-user');
       if (conversationId) {
         formData.append('conversationId', conversationId);
       }
@@ -81,13 +176,40 @@ export default function Chat() {
 
       return response.json();
     },
-    onSuccess: (data) => {
-      setCurrentConversationId(data.conversationId);
+    onSuccess: (data, variables) => {
+      // Save to localStorage
+      if (data.conversationId && userData) {
+        const conversationTitle = conversationsData?.conversations?.find((c: any) => c.id === data.conversationId)?.title || "Percakapan Baru";
+        localStorageHook.addChatToHistory({
+          conversationId: data.conversationId,
+          title: conversationTitle,
+          lastMessage: variables.message.substring(0, 50) + (variables.message.length > 50 ? "..." : ""),
+          timestamp: new Date().toISOString()
+        });
+
+        // Get updated messages and save to localStorage
+        setTimeout(async () => {
+          try {
+            const response = await fetch(`/api/conversations/${data.conversationId}/messages`);
+            if (response.ok) {
+              const messages = await response.json();
+              localStorageHook.saveMessages(data.conversationId, messages);
+            }
+          } catch (error) {
+            console.error("Failed to cache messages:", error);
+          }
+        }, 500);
+      }
+
+      // Invalidate conversations to update the list
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      // Set the selected conversation
+      setCurrentConversationId(data.conversationId);
+      // Invalidate messages for the new/current conversation
       queryClient.invalidateQueries({
         queryKey: ["/api/conversations", data.conversationId, "messages"]
       });
-      setIsTyping(false);
+      setIsTyping(false); // Ensure typing indicator is turned off
     },
     onError: (error) => {
       toast({
@@ -95,7 +217,7 @@ export default function Chat() {
         description: error.message,
         variant: "destructive",
       });
-      setIsTyping(false);
+      setIsTyping(false); // Ensure typing indicator is turned off on error
     },
   });
 
@@ -109,12 +231,16 @@ export default function Chat() {
       queryClient.invalidateQueries({
         queryKey: ["/api/conversations", currentConversationId, "messages"]
       });
+      // Also clear from localStorage
+      if (currentConversationId) {
+        localStorageHook.clearMessages(currentConversationId);
+      }
       toast({
         title: "Success",
         description: "Conversation cleared successfully",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to clear conversation",
@@ -142,6 +268,7 @@ export default function Chat() {
 
   const handleNewConversation = () => {
     setCurrentConversationId(undefined);
+    setIsSidebarOpen(false); // Close sidebar on new conversation
   };
 
   const handleSelectConversation = (conversationId: string) => {
@@ -196,6 +323,9 @@ export default function Chat() {
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
             onNewConversation={handleNewConversation}
+            // Pass conversation history from localStorage if available
+            conversations={localStorageHook.getChatHistory()}
+            isLoadingConversations={isLoadingConversations}
           />
         </div>
 
