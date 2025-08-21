@@ -160,11 +160,32 @@ class CookiesManager {
 
   public saveMessagesForConversation(conversationId: string, messages: any[]): void {
     try {
-      // Only save last 10 messages per conversation to avoid cookie size limits
-      const limitedMessages = messages.slice(-10);
-      this.setCookie(this.MESSAGES_KEY_PREFIX + conversationId, JSON.stringify(limitedMessages));
+      // Only save last 5 messages per conversation and simplify data to avoid cookie size limits
+      const limitedMessages = messages.slice(-5).map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        createdAt: msg.createdAt,
+        // Exclude complex metadata and attachments to reduce size
+      }));
+      const dataString = JSON.stringify(limitedMessages);
+      
+      // Check if data is too large for cookies (cookies have ~4KB limit per cookie)
+      if (dataString.length > 3000) {
+        console.warn('Message data too large for cookies, storing only essential data');
+        const essentialMessages = messages.slice(-3).map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content.substring(0, 200), // Truncate long content
+          createdAt: msg.createdAt,
+        }));
+        this.setCookie(this.MESSAGES_KEY_PREFIX + conversationId, JSON.stringify(essentialMessages));
+      } else {
+        this.setCookie(this.MESSAGES_KEY_PREFIX + conversationId, dataString);
+      }
     } catch (error) {
       console.error('Error saving messages to cookies:', error);
+      // Fallback: just don't save to cookies, continue without caching
     }
   }
 

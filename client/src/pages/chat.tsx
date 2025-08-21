@@ -89,45 +89,47 @@ export default function Chat() {
   const messagesQuery = useQuery({
     queryKey: ["/api/conversations", currentConversationId, "messages"],
     queryFn: async () => {
-      // First try to get from localStorage for faster loading
-      if (currentConversationId) {
-        const cachedMessages = localStorageHook.getMessages(currentConversationId);
-        if (cachedMessages.length > 0) {
-          // Return cached messages first, then fetch fresh data in background
-          setTimeout(async () => {
-            try {
-              const response = await fetch(`/api/conversations/${currentConversationId}/messages`);
-              if (response.ok) {
-                const freshData = await response.json();
-                localStorageHook.saveMessages(currentConversationId, freshData);
-                queryClient.setQueryData(
-                  ["/api/conversations", currentConversationId, "messages"],
-                  freshData
-                );
-              }
-            } catch (error) {
-              console.error("Background refresh failed:", error);
-            }
-          }, 100);
-          return cachedMessages;
+      if (!currentConversationId) {
+        return [];
+      }
+
+      try {
+        // Fetch fresh data from server
+        const response = await fetch(`/api/conversations/${currentConversationId}/messages`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch messages: ${response.status}`);
         }
-      }
+        const data = await response.json();
+        console.log('Fetched messages:', data);
 
-      // Fetch from server if no cache
-      const response = await fetch(`/api/conversations/${currentConversationId}/messages`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages");
-      }
-      const data = await response.json();
+        // Try to save to localStorage (but don't fail if it doesn't work)
+        try {
+          localStorageHook.saveMessages(currentConversationId, data);
+        } catch (storageError) {
+          console.warn("Could not save to localStorage:", storageError);
+        }
 
-      // Save to localStorage
-      if (currentConversationId) {
-        localStorageHook.saveMessages(currentConversationId, data);
+        return data || [];
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        
+        // Fallback to cached messages if server fails
+        try {
+          const cachedMessages = localStorageHook.getMessages(currentConversationId);
+          if (cachedMessages.length > 0) {
+            console.log('Using cached messages as fallback');
+            return cachedMessages;
+          }
+        } catch (cacheError) {
+          console.warn("Cache also failed:", cacheError);
+        }
+        
+        throw error;
       }
-
-      return data;
     },
     enabled: !!currentConversationId,
+    retry: 2,
+    staleTime: 1000, // Consider data stale after 1 second
   });
 
   const messagesData = messagesQuery.data as Message[] || [];
@@ -202,10 +204,14 @@ export default function Chat() {
     onSuccess: (data, variables) => {
       console.log('Message sent successfully:', data);
       
-      // Save to localStorage with error handling
+      // Set conversation ID immediately
+      setCurrentConversationId(data.conversationId);
+      setIsTyping(false);
+      
+      // Try to save to localStorage (but don't block the UI if it fails)
       if (data.conversationId && userData) {
         try {
-          const conversationTitle = conversationsData?.conversations?.find((c: any) => c.id === data.conversationId)?.title || "Percakapan Baru";
+          const conversationTitle = "Percakapan Baru";
           localStorageHook.addChatToHistory({
             conversationId: data.conversationId,
             title: conversationTitle,
@@ -213,37 +219,17 @@ export default function Chat() {
             timestamp: new Date().toISOString()
           });
         } catch (error) {
-          console.warn("Failed to save to localStorage:", error);
-          // Continue without localStorage - don't block the chat
-        }
-      }
-      
-      // Save messages to localStorage with error handling
-      if (data.conversationId && data.userMessage && data.assistantMessage) {
-        try {
-          const updatedMessages = messagesData ? [...messagesData, data.userMessage, data.assistantMessage] : [data.userMessage, data.assistantMessage];
-          localStorageHook.saveMessages(data.conversationId, updatedMessages);
-        } catch (error) {
-          console.warn("Failed to save messages to localStorage:", error);
-          // Continue without localStorage - don't block the chat
+          console.warn("localStorage save failed:", error);
         }
       }
 
-      // Invalidate and refresh queries
-      Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }),
-        queryClient.invalidateQueries({
-          queryKey: ["/api/conversations", data.conversationId, "messages"]
-        })
-      ]).then(() => {
-        // Set the selected conversation after queries are invalidated
-        setCurrentConversationId(data.conversationId);
-        setIsTyping(false);
-      }).catch((error) => {
-        console.warn("Failed to refresh queries:", error);
-        setCurrentConversationId(data.conversationId);
-        setIsTyping(false);
-      });
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] })
+        .catch(err => console.warn("Failed to invalidate conversations:", err));
+      
+      queryClient.invalidateQueries({
+        queryKey: ["/api/conversations", data.conversationId, "messages"]
+      }).catch(err => console.warn("Failed to invalidate messages:", err));
     },
     onError: (error) => {
       console.error('Send message error:', error);
