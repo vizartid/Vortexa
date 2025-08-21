@@ -2,6 +2,30 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Message } from "@shared/schema";
 
+// Function to clean markdown formatting from AI responses
+function cleanMarkdownFormatting(text: string): string {
+  return text
+    // Remove bold formatting (**text** or __text__)
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    // Remove italic formatting (*text* or _text_)
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    // Remove strikethrough (~~text~~)
+    .replace(/~~(.*?)~~/g, '$1')
+    // Remove code blocks (```text```)
+    .replace(/```[\s\S]*?```/g, (match) => {
+      return match.replace(/```/g, '').trim();
+    })
+    // Remove inline code (`text`)
+    .replace(/`(.*?)`/g, '$1')
+    // Remove headers (# ## ### etc)
+    .replace(/^#{1,6}\s+/gm, '')
+    // Clean up extra whitespace
+    .replace(/\n\s*\n/g, '\n\n')
+    .trim();
+}
+
 const apiKey = process.env.GOOGLE_API_KEY;
 
 if (!apiKey) {
@@ -80,14 +104,17 @@ export async function createGeminiChatCompletion(
     }
     
     const response = await result.response;
-    const text = response.text();
+    const rawText = response.text();
+    
+    // Clean markdown formatting from the response
+    const cleanedText = cleanMarkdownFormatting(rawText);
 
     // Estimate token usage (rough approximation)
     const promptTokens = Math.ceil(latestMessage.length / 4);
-    const completionTokens = Math.ceil(text.length / 4);
+    const completionTokens = Math.ceil(cleanedText.length / 4);
 
     return {
-      content: text,
+      content: cleanedText,
       usage: {
         prompt_tokens: promptTokens,
         completion_tokens: completionTokens,
