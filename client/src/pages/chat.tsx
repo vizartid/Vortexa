@@ -216,6 +216,17 @@ export default function Chat() {
           console.warn("Failed to save to localStorage:", error);
           // Continue without localStorage - don't block the chat
         }
+      }
+      
+      // Save messages to localStorage with error handling
+      if (data.conversationId && messagesData) {
+        try {
+          const updatedMessages = [...messagesData, data.userMessage, data.assistantMessage];
+          localStorageHook.saveMessages(data.conversationId, updatedMessages);
+        } catch (error) {
+          console.warn("Failed to save messages to localStorage:", error);
+          // Continue without localStorage - don't block the chat
+        }
 
         // Get updated messages and save to localStorage
         setTimeout(async () => {
