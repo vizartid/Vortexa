@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Bot, ExternalLink, MessageCircle, Info, Github, Linkedin, Globe, Mail } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import { DotPatternLinearGradient } from "@/components/magicui/dot-pattern-linear-gradient";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
 
 export default function Landing() {
@@ -26,8 +27,10 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white font-['Tomorrow']">
-      <Navigation currentPath="/" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white font-['Tomorrow'] relative">
+      <DotPatternLinearGradient />
+      <div className="relative z-10">
+        <Navigation currentPath="/" /></div>
 
       {/* Hero Section - Full Screen */}
       <section className="min-h-screen flex items-center justify-center px-6 pt-20">
@@ -230,6 +233,7 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
