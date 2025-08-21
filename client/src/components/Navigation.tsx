@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import logoImage from "/attached_assets/Logo-vortexa-white.png";
+import logoImage from "@assets/Logo-vortexa-white.png?url";
 
 // Assuming 'Tomorrow' and 'Montserrat' are available via CSS imports or similar
 // For example, in your main CSS file or within the component's CSS module:
