@@ -1,5 +1,5 @@
-
-modules = ["nodejs-20", "python-3.11"]
+modules = ["nodejs-20", "web"]
+run = "npm run dev"
 
 [workflows]
 runButton = "Run"
@@ -15,3 +15,9 @@ args = "npm run dev"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[deployment]
+run = ["sh", "-c", "npm run dev"]
+
+[nix]
+channel = "stable-25_05"
