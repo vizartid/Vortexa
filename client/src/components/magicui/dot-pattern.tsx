@@ -22,9 +22,10 @@ export function DotPattern({
     <svg
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 h-full w-full fill-neutral-400/20",
+        "pointer-events-none absolute inset-0 h-full w-full",
         className
       )}
+      style={{ minHeight: '100vh', minWidth: '100vw' }}
     >
       <defs>
         <pattern

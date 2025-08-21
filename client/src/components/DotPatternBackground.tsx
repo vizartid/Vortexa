@@ -8,14 +8,14 @@ export function DotPatternBackground() {
   return (
     <div className="fixed inset-0 z-0">
       <DotPattern
-        width={20}
-        height={20}
+        width={16}
+        height={16}
         cx={1}
         cy={1}
-        cr={1}
+        cr={1.5}
         className={cn(
-          "[mask-image:linear-gradient(to_bottom_right,white,transparent,transparent)]",
-          "opacity-30"
+          "[mask-image:radial-gradient(ellipse_at_center,white_40%,transparent_70%)]",
+          "opacity-60 fill-white/40"
         )}
       />
     </div>
