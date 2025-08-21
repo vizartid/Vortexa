@@ -10,7 +10,6 @@ import { Plus, MessageSquare, Trash2, Edit3, Menu, Settings, User, Bot } from "l
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
-import UserInfo from "@/components/UserInfo";
 
 interface Conversation {
   id: string;
@@ -159,7 +158,6 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
 
       {/* Footer */}
       <div className="p-3 border-t border-slate-700">
-        <UserInfo />
         <div className="flex items-center space-x-3 p-3 bg-slate-800/50 rounded-lg">
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />
