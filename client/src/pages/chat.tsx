@@ -14,7 +14,6 @@ import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
-// Removed localStorage import
 
 export default function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,7 +25,6 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
-  // No more localStorage functionality
 
   // Fetch conversations
   const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
