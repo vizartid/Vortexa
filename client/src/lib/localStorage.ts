@@ -1,5 +1,5 @@
 
-// Utility functions for localStorage operations
+// Utility functions for cookies operations
 export interface UserData {
   userId: string;
   username?: string;
@@ -18,17 +18,41 @@ export interface ChatHistory {
   timestamp: string;
 }
 
-class LocalStorageManager {
-  private static instance: LocalStorageManager;
+class CookiesManager {
+  private static instance: CookiesManager;
   private readonly USER_DATA_KEY = 'vortexa_user_data';
   private readonly CHAT_HISTORY_KEY = 'vortexa_chat_history';
   private readonly MESSAGES_KEY_PREFIX = 'vortexa_messages_';
 
-  public static getInstance(): LocalStorageManager {
-    if (!LocalStorageManager.instance) {
-      LocalStorageManager.instance = new LocalStorageManager();
+  public static getInstance(): CookiesManager {
+    if (!CookiesManager.instance) {
+      CookiesManager.instance = new CookiesManager();
     }
-    return LocalStorageManager.instance;
+    return CookiesManager.instance;
+  }
+
+  // Cookie utility methods
+  private setCookie(name: string, value: string, days: number = 365): void {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  }
+
+  private getCookie(name: string): string | null {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) {
+        return decodeURIComponent(c.substring(nameEQ.length, c.length));
+      }
+    }
+    return null;
+  }
+
+  private deleteCookie(name: string): void {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
   }
 
   // Generate unique user ID
@@ -39,7 +63,7 @@ class LocalStorageManager {
   // User Data Management
   public getUserData(): UserData {
     try {
-      const data = localStorage.getItem(this.USER_DATA_KEY);
+      const data = this.getCookie(this.USER_DATA_KEY);
       if (data) {
         const userData = JSON.parse(data);
         // Update visit count and last visit
@@ -49,7 +73,7 @@ class LocalStorageManager {
         return userData;
       }
     } catch (error) {
-      console.error('Error reading user data from localStorage:', error);
+      console.error('Error reading user data from cookies:', error);
     }
 
     // Create new user data if doesn't exist
@@ -68,9 +92,9 @@ class LocalStorageManager {
 
   public setUserData(userData: UserData): void {
     try {
-      localStorage.setItem(this.USER_DATA_KEY, JSON.stringify(userData));
+      this.setCookie(this.USER_DATA_KEY, JSON.stringify(userData));
     } catch (error) {
-      console.error('Error saving user data to localStorage:', error);
+      console.error('Error saving user data to cookies:', error);
     }
   }
 
@@ -83,10 +107,10 @@ class LocalStorageManager {
   // Chat History Management
   public getChatHistory(): ChatHistory[] {
     try {
-      const data = localStorage.getItem(this.CHAT_HISTORY_KEY);
+      const data = this.getCookie(this.CHAT_HISTORY_KEY);
       return data ? JSON.parse(data) : [];
     } catch (error) {
-      console.error('Error reading chat history from localStorage:', error);
+      console.error('Error reading chat history from cookies:', error);
       return [];
     }
   }
@@ -102,21 +126,21 @@ class LocalStorageManager {
         history.unshift(chat);
       }
 
-      // Keep only last 50 chats
-      if (history.length > 50) {
-        history.splice(50);
+      // Keep only last 20 chats (reduced to avoid cookie size limits)
+      if (history.length > 20) {
+        history.splice(20);
       }
 
-      localStorage.setItem(this.CHAT_HISTORY_KEY, JSON.stringify(history));
+      this.setCookie(this.CHAT_HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
-      console.error('Error saving chat history to localStorage:', error);
+      console.error('Error saving chat history to cookies:', error);
     }
   }
 
   public removeChatFromHistory(conversationId: string): void {
     try {
       const history = this.getChatHistory().filter(c => c.conversationId !== conversationId);
-      localStorage.setItem(this.CHAT_HISTORY_KEY, JSON.stringify(history));
+      this.setCookie(this.CHAT_HISTORY_KEY, JSON.stringify(history));
       // Also remove messages for this conversation
       this.removeMessagesFromStorage(conversationId);
     } catch (error) {
@@ -124,44 +148,49 @@ class LocalStorageManager {
     }
   }
 
-  // Messages Management
+  // Messages Management (simplified for cookies)
   public getMessagesForConversation(conversationId: string): any[] {
     try {
-      const data = localStorage.getItem(this.MESSAGES_KEY_PREFIX + conversationId);
+      const data = this.getCookie(this.MESSAGES_KEY_PREFIX + conversationId);
       return data ? JSON.parse(data) : [];
     } catch (error) {
-      console.error('Error reading messages from localStorage:', error);
+      console.error('Error reading messages from cookies:', error);
       return [];
     }
   }
 
   public saveMessagesForConversation(conversationId: string, messages: any[]): void {
     try {
-      localStorage.setItem(this.MESSAGES_KEY_PREFIX + conversationId, JSON.stringify(messages));
+      // Only save last 10 messages per conversation to avoid cookie size limits
+      const limitedMessages = messages.slice(-10);
+      this.setCookie(this.MESSAGES_KEY_PREFIX + conversationId, JSON.stringify(limitedMessages));
     } catch (error) {
-      console.error('Error saving messages to localStorage:', error);
+      console.error('Error saving messages to cookies:', error);
     }
   }
 
   public removeMessagesFromStorage(conversationId: string): void {
     try {
-      localStorage.removeItem(this.MESSAGES_KEY_PREFIX + conversationId);
+      this.deleteCookie(this.MESSAGES_KEY_PREFIX + conversationId);
     } catch (error) {
-      console.error('Error removing messages from localStorage:', error);
+      console.error('Error removing messages from cookies:', error);
     }
   }
 
   // Utility methods
   public clearAllData(): void {
     try {
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('vortexa_')) {
-          localStorage.removeItem(key);
+      // Get all cookies
+      const cookies = document.cookie.split(';');
+      cookies.forEach(cookie => {
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        if (name.startsWith('vortexa_')) {
+          this.deleteCookie(name);
         }
       });
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      console.error('Error clearing cookies:', error);
     }
   }
 
@@ -169,15 +198,14 @@ class LocalStorageManager {
     try {
       let totalSize = 0;
       let itemCount = 0;
-      const keys = Object.keys(localStorage);
+      const cookies = document.cookie.split(';');
       
-      keys.forEach(key => {
-        if (key.startsWith('vortexa_')) {
-          const value = localStorage.getItem(key);
-          if (value) {
-            totalSize += key.length + value.length;
-            itemCount++;
-          }
+      cookies.forEach(cookie => {
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        if (name.startsWith('vortexa_')) {
+          totalSize += cookie.length;
+          itemCount++;
         }
       });
 
@@ -189,22 +217,22 @@ class LocalStorageManager {
   }
 }
 
-export const localStorageManager = LocalStorageManager.getInstance();
+export const cookiesManager = CookiesManager.getInstance();
 
-// Helper hooks for React components
+// Helper hooks for React components (updated to use cookies)
 export const useLocalStorage = () => {
   return {
-    getUserData: () => localStorageManager.getUserData(),
-    setUserData: (data: UserData) => localStorageManager.setUserData(data),
+    getUserData: () => cookiesManager.getUserData(),
+    setUserData: (data: UserData) => cookiesManager.setUserData(data),
     updatePreferences: (prefs: Partial<UserData['preferences']>) => 
-      localStorageManager.updateUserPreferences(prefs),
-    getChatHistory: () => localStorageManager.getChatHistory(),
-    addChatToHistory: (chat: ChatHistory) => localStorageManager.addChatToHistory(chat),
-    removeChatFromHistory: (id: string) => localStorageManager.removeChatFromHistory(id),
-    getMessages: (id: string) => localStorageManager.getMessagesForConversation(id),
+      cookiesManager.updateUserPreferences(prefs),
+    getChatHistory: () => cookiesManager.getChatHistory(),
+    addChatToHistory: (chat: ChatHistory) => cookiesManager.addChatToHistory(chat),
+    removeChatFromHistory: (id: string) => cookiesManager.removeChatFromHistory(id),
+    getMessages: (id: string) => cookiesManager.getMessagesForConversation(id),
     saveMessages: (id: string, messages: any[]) => 
-      localStorageManager.saveMessagesForConversation(id, messages),
-    clearAll: () => localStorageManager.clearAllData(),
-    getStorageInfo: () => localStorageManager.getStorageInfo()
+      cookiesManager.saveMessagesForConversation(id, messages),
+    clearAll: () => cookiesManager.clearAllData(),
+    getStorageInfo: () => cookiesManager.getStorageInfo()
   };
 };
