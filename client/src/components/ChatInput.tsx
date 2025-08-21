@@ -70,23 +70,36 @@ export function ChatInput({
         continue;
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        const base64Data = base64.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const base64 = reader.result as string;
+            const base64Data = base64.split(',')[1]; // Remove data:image/jpeg;base64, prefix
 
-        const attachment: FileAttachment = {
-          id: `${Date.now()}-${Math.random()}`,
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size,
-          data: base64Data,
-          uploadedAt: new Date(),
+            const attachment: FileAttachment = {
+              id: `${Date.now()}-${Math.random()}`,
+              filename: file.name,
+              mimeType: file.type,
+              size: file.size,
+              data: base64Data,
+              uploadedAt: new Date(),
+            };
+
+            setAttachments(prev => [...prev, attachment]);
+          } catch (error) {
+            console.error('Error processing file:', file.name, error);
+          }
         };
-
-        setAttachments(prev => [...prev, attachment]);
-      };
-      reader.readAsDataURL(file);
+        
+        reader.onerror = () => {
+          console.error('Error reading file:', file.name);
+        };
+        
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error setting up file reader for:', file.name, error);
+      }
     }
 
     // Reset file input

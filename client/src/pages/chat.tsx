@@ -219,42 +219,31 @@ export default function Chat() {
       }
       
       // Save messages to localStorage with error handling
-      if (data.conversationId && messagesData) {
+      if (data.conversationId && data.userMessage && data.assistantMessage) {
         try {
-          const updatedMessages = [...messagesData, data.userMessage, data.assistantMessage];
+          const updatedMessages = messagesData ? [...messagesData, data.userMessage, data.assistantMessage] : [data.userMessage, data.assistantMessage];
           localStorageHook.saveMessages(data.conversationId, updatedMessages);
         } catch (error) {
           console.warn("Failed to save messages to localStorage:", error);
           // Continue without localStorage - don't block the chat
         }
-
-        // Get updated messages and save to localStorage
-        setTimeout(async () => {
-          try {
-            const response = await fetch(`/api/conversations/${data.conversationId}/messages`);
-            if (response.ok) {
-              const messages = await response.json();
-              try {
-                localStorageHook.saveMessages(data.conversationId, messages);
-              } catch (error) {
-                console.warn("Failed to cache messages to localStorage:", error);
-              }
-            }
-          } catch (error) {
-            console.warn("Failed to fetch updated messages:", error);
-          }
-        }, 500);
       }
 
-      // Invalidate conversations to update the list
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      // Set the selected conversation
-      setCurrentConversationId(data.conversationId);
-      // Invalidate messages for the new/current conversation
-      queryClient.invalidateQueries({
-        queryKey: ["/api/conversations", data.conversationId, "messages"]
+      // Invalidate and refresh queries
+      Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["/api/conversations", data.conversationId, "messages"]
+        })
+      ]).then(() => {
+        // Set the selected conversation after queries are invalidated
+        setCurrentConversationId(data.conversationId);
+        setIsTyping(false);
+      }).catch((error) => {
+        console.warn("Failed to refresh queries:", error);
+        setCurrentConversationId(data.conversationId);
+        setIsTyping(false);
       });
-      setIsTyping(false); // Ensure typing indicator is turned off
     },
     onError: (error) => {
       console.error('Send message error:', error);
