@@ -10,15 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Bot,
-  Trash2,
-  ArrowLeft,
-  Menu,
-  X,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from "lucide-react";
+import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
@@ -27,9 +19,7 @@ import logoImage from "@assets/Logo-vortexa-white.png?url";
 export default function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
-  const [currentConversationId, setCurrentConversationId] = useState<
-    string | undefined
-  >();
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>();
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -62,46 +52,43 @@ export default function Chat() {
     staleTime: Infinity,
   });
 
+
   // For serverless mode, we'll manage messages in local state
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
   // Dummy query to maintain the same interface
-  const messagesData = (messagesQuery.data as Message[]) || [];
+  const messagesData = messagesQuery.data as Message[] || [];
   const isLoading = messagesQuery.isLoading;
 
   const sendMessageMutation = useMutation({
     mutationFn: async ({
       message,
       attachments,
-      conversationId,
+      conversationId
     }: {
       message: string;
       attachments: FileAttachment[];
       conversationId?: string;
     }) => {
-      console.log("Sending message:", {
-        message,
-        conversationId,
-        attachmentsCount: attachments.length,
-      });
+      console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
 
       // Prepare JSON payload instead of FormData for Netlify Functions
       const payload = {
         message,
-        userId: "default-user",
+        userId: 'default-user',
         conversationId,
-        attachments,
+        attachments
       };
 
       try {
-        const response = await apiRequest("POST", "/api/chat", payload);
+        const response = await apiRequest('POST', '/api/chat', payload);
 
-        console.log("API Response status:", response.status);
+        console.log('API Response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("API Error Response:", errorText);
-          let errorMessage = "Failed to send message";
+          console.error('API Error Response:', errorText);
+          let errorMessage = 'Failed to send message';
           try {
             const errorJson = JSON.parse(errorText);
             errorMessage = errorJson.message || errorMessage;
@@ -112,8 +99,8 @@ export default function Chat() {
         }
 
         const data = await response.json();
-        console.log("API Response data:", data);
-
+        console.log('API Response data:', data);
+        
         // Handle different response formats
         if (data.success && data.response) {
           // Netlify Function response format
@@ -121,31 +108,27 @@ export default function Chat() {
             success: true,
             conversationId: data.conversationId,
             response: data.response,
-            assistantMessage: data.assistantMessage,
+            assistantMessage: data.assistantMessage
           };
         } else if (data.assistantMessage) {
           // Express server response format
           return data;
         }
-
+        
         return data;
       } catch (error) {
-        console.error("Network/API Error:", error);
+        console.error('Network/API Error:', error);
         throw error;
       }
     },
     onSuccess: (data, variables) => {
-      console.log("Message sent successfully:", data);
+      console.log('Message sent successfully:', data);
 
-      const conversationId =
-        data.conversationId || currentConversationId || `conv-${Date.now()}`;
+      const conversationId = data.conversationId || currentConversationId || `conv-${Date.now()}`;
       setCurrentConversationId(conversationId);
 
       // Handle both Netlify Function and Express server response formats
-      const assistantContent =
-        data.response ||
-        data.assistantMessage?.content ||
-        "No response received";
+      const assistantContent = data.response || data.assistantMessage?.content || 'No response received';
       const assistantMetadata = data.assistantMessage?.metadata || null;
 
       // Add messages to local state instead of database
@@ -153,27 +136,27 @@ export default function Chat() {
         {
           id: `user-${Date.now()}`,
           conversationId: conversationId,
-          role: "user" as const,
+          role: 'user' as const,
           content: variables.message,
           attachments: null,
           metadata: null,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
         },
         {
           id: `assistant-${Date.now()}`,
           conversationId: conversationId,
-          role: "assistant" as const,
+          role: 'assistant' as const,
           content: assistantContent,
           attachments: null,
           metadata: assistantMetadata,
-          createdAt: new Date().toISOString(),
-        },
+          createdAt: new Date().toISOString()
+        }
       ];
 
-      // Update query cache with new messages
+        // Update query cache with new messages
       queryClient.setQueryData(
         ["/api/conversations", conversationId, "messages"],
-        (oldData: any) => [...(oldData || []), ...newMessages],
+        (oldData: any) => [...(oldData || []), ...newMessages]
       );
 
       setIsTyping(false);
@@ -185,13 +168,10 @@ export default function Chat() {
       });
     },
     onError: (error) => {
-      console.error("Send message error:", error);
+      console.error('Send message error:', error);
       toast({
         title: "Gagal Mengirim Pesan",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Terjadi kesalahan saat mengirim pesan",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengirim pesan",
         variant: "destructive",
       });
       setIsTyping(false); // Ensure typing indicator is turned off on error
@@ -219,10 +199,7 @@ export default function Chat() {
     },
   });
 
-  const handleSendMessage = async (
-    message: string,
-    attachments: FileAttachment[],
-  ) => {
+  const handleSendMessage = async (message: string, attachments: FileAttachment[]) => {
     if (!message.trim() && attachments.length === 0) return;
 
     setIsTyping(true);
@@ -272,16 +249,29 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar - positioned absolute to allow chat to expand behind it */}
-      {!isMobile && (
-        <div
-          className={`
-          ${isDesktopSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          fixed inset-y-0 left-0 w-80
-          transition-all duration-300 ease-in-out
-          z-10
-        `}
-        >
+      
+
+      <div className="flex h-full w-full">
+        {/* Sidebar */}
+        {!isMobile && (
+          <div className={`
+            ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            relative inset-y-0 left-0 w-80
+            transition-all duration-300 ease-in-out
+            z-10
+          `}>
+            <ChatSidebar
+              currentConversationId={currentConversationId}
+              onConversationSelect={handleSelectConversation}
+              onNewConversation={handleNewConversation}
+              conversations={conversationsData?.conversations || []}
+              isLoadingConversations={isLoadingConversations}
+            />
+          </div>
+        )}
+
+        {/* Mobile Sidebar */}
+        {isMobile && (
           <ChatSidebar
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
@@ -289,131 +279,111 @@ export default function Chat() {
             conversations={conversationsData?.conversations || []}
             isLoadingConversations={isLoadingConversations}
           />
-        </div>
-      )}
+        )}
 
-      {/* Mobile Sidebar */}
-      {isMobile && (
-        <ChatSidebar
-          currentConversationId={currentConversationId}
-          onConversationSelect={handleSelectConversation}
-          onNewConversation={handleNewConversation}
-          conversations={conversationsData?.conversations || []}
-          isLoadingConversations={isLoadingConversations}
-        />
-      )}
-
-      {/* Main chat area - takes full width, with padding when sidebar is open */}
-      <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-          !isMobile && isDesktopSidebarOpen ? "ml-80" : "ml-0"
-        }`}
-      >
-        {/* Header */}
-        <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            {/* Desktop Sidebar Toggle */}
-            {!isMobile && (
+        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+          !isMobile && !isDesktopSidebarOpen ? 'ml-0' : ''
+        }`}>
+          {/* Header */}
+          <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              {/* Desktop Sidebar Toggle */}
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                  className="mr-2"
+                >
+                  {isDesktopSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                onClick={() => setLocation("/")}
                 className="mr-2"
               >
-                {isDesktopSidebarOpen ? (
-                  <PanelLeftClose className="w-4 h-4" />
-                ) : (
-                  <PanelLeftOpen className="w-4 h-4" />
-                )}
+                <ArrowLeft className="w-4 h-4" />
               </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation("/")}
-              className="mr-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <img
-              src={logoImage}
-              alt="Vortexa Logo"
-              className="w-6 h-6 object-contain"
-            />
-            <div>
-              <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
-              <p className="text-sm text-muted-foreground">
-                AI-Powered Assistant
-              </p>
+              <img
+                src={logoImage}
+                alt="Vortexa Logo"
+                className="w-6 h-6 object-contain"
+              />
+              <div>
+                <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
+                <p className="text-sm text-muted-foreground">
+                  AI-Powered Assistant
+                </p>
+              </div>
             </div>
+
+            {currentConversationId && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearConversation}
+                  disabled={sendMessageMutation.isPending} // Disable if a message is being sent
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              </div>
+            )}
           </div>
 
-          {currentConversationId && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearConversation}
-                disabled={sendMessageMutation.isPending} // Disable if a message is being sent
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div
-            className={`mx-auto w-full transition-all duration-300 ${
-              !isMobile ? "max-w-none px-4" : "max-w-4xl"
-            }`}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full min-h-[60vh]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : messagesData && messagesData.length > 0 ? (
-              <div className="space-y-4">
-                {messagesData.map((message) => (
-                  <ChatMessage key={message.id} message={message} />
-                ))}
-                {isTyping && <TypingIndicator />}
-                <div ref={messagesEndRef} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="text-center max-w-md mx-auto">
-                  <img
-                    src={logoImage}
-                    alt="Vortexa Logo"
-                    className="w-16 h-16 mx-auto mb-6 opacity-80"
-                  />
-                  <h2 className="text-2xl font-semibold mb-3 text-foreground">
-                    Selamat Datang!
-                  </h2>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    Mulai percakapan dengan mengirim pesan di bawah
-                  </p>
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-4">
+            <div className={`mx-auto w-full transition-all duration-300 ${
+              !isMobile 
+                ? (isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-none px-8') 
+                : 'max-w-4xl'
+            }`}>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full min-h-[60vh]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              ) : messagesData && messagesData.length > 0 ? (
+                <div className="space-y-4">
+                  {messagesData.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))}
+                  {isTyping && <TypingIndicator />}
+                  <div ref={messagesEndRef} />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center min-h-[60vh]">
+                  <div className="text-center max-w-md mx-auto">
+                    <img
+                      src={logoImage}
+                      alt="Vortexa Logo"
+                      className="w-16 h-16 mx-auto mb-6 opacity-80"
+                    />
+                    <h2 className="text-2xl font-semibold mb-3 text-foreground">Selamat Datang!</h2>
+                    <p className="text-muted-foreground text-lg leading-relaxed">
+                      Mulai percakapan dengan mengirim pesan di bawah
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
 
-        {/* Input */}
-        <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-          <div
-            className={`mx-auto w-full transition-all duration-300 ${
-              !isMobile ? "max-w-none px-4" : "max-w-4xl"
-            }`}
-          >
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              disabled={sendMessageMutation.isPending}
-              placeholder="Ketik pesan Anda..."
-            />
+          {/* Input */}
+          <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
+            <div className={`mx-auto w-full transition-all duration-300 ${
+              !isMobile 
+                ? (isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-none px-8') 
+                : 'max-w-4xl'
+            }`}>
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                disabled={sendMessageMutation.isPending}
+                placeholder="Ketik pesan Anda..."
+              />
+            </div>
           </div>
         </div>
       </div>
