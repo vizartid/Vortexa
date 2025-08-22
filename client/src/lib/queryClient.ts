@@ -35,18 +35,36 @@ export async function apiRequest(
       if (url.startsWith('/api/chat')) {
         fullUrl = `${window.location.origin}/.netlify/functions/chat`;
       } else {
-        // For other API calls that don't exist in Netlify Functions, return empty response
+        // For other API calls that don't exist in Netlify Functions, return mock response
         console.log('API call not supported in serverless mode:', url);
-        return { conversations: [], messages: [] };
+        return new Response(JSON.stringify({ conversations: [], messages: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
     }
 
+    console.log('Making API request to:', fullUrl, 'with method:', method);
+
     const res = await fetch(fullUrl, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
     });
+
+    console.log('API Response received:', res.status, res.statusText);
+
+    // Check if response is actually JSON
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const textResponse = await res.text();
+      console.error('Non-JSON response received:', textResponse.substring(0, 200));
+      throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}`);
+    }
 
     await throwIfResNotOk(res);
     return res;
