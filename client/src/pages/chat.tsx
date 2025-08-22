@@ -70,9 +70,9 @@ export default function Chat() {
     }) => {
       console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
 
-      // Prepare JSON payload instead of FormData for Netlify Functions
+      // Prepare JSON payload
       const payload = {
-        message,
+        message: message.trim(),
         userId: 'default-user',
         conversationId,
         attachments
@@ -80,46 +80,72 @@ export default function Chat() {
 
       try {
         const response = await apiRequest('POST', '/api/chat', payload);
-
         console.log('API Response status:', response.status);
-        console.log('API Response headers:', response.headers.get('content-type'));
+
+        // Clone response for multiple reads
+        const responseClone = response.clone();
 
         if (!response.ok) {
-          let errorMessage = 'Failed to send message';
+          let errorMessage = `HTTP ${response.status}: Failed to send message`;
+          
           try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorData.error || errorMessage;
-          } catch (parseError) {
-            // If we can't parse JSON, try to get text
+            const errorText = await responseClone.text();
+            console.error('Error response text:', errorText);
+            
+            // Try to parse as JSON first
             try {
-              const errorText = await response.text();
-              console.error('Non-JSON API Error Response:', errorText);
-              errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
-            } catch (textError) {
-              errorMessage = `Server error (${response.status})`;
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch {
+              // If not JSON, use text content
+              errorMessage = errorText || errorMessage;
             }
+          } catch (textError) {
+            console.error('Could not read error response:', textError);
           }
+          
           throw new Error(errorMessage);
         }
 
-        // Check content type
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.warn('Response is not JSON:', contentType);
-          const text = await response.text();
-          console.error('Non-JSON response:', text);
-          throw new Error('Server returned invalid response format');
+        // Get response text first
+        let responseText;
+        try {
+          responseText = await response.text();
+          console.log('Raw response:', responseText.substring(0, 200) + '...');
+        } catch (textError) {
+          console.error('Could not read response text:', textError);
+          throw new Error('Could not read server response');
         }
 
-        const data = await response.json();
-        console.log('API Response data:', data);
+        // Validate response is not empty
+        if (!responseText || responseText.trim() === '') {
+          throw new Error('Server returned empty response');
+        }
+
+        // Try to parse as JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.error('Response text:', responseText);
+          
+          // Check if response looks like HTML (common error response)
+          if (responseText.trim().startsWith('<')) {
+            throw new Error('Server returned HTML instead of JSON. Please check server logs.');
+          }
+          
+          throw new Error(`Invalid JSON response from server: ${responseText.substring(0, 100)}`);
+        }
+
+        console.log('Parsed API Response:', data);
         
-        // Check if response indicates success
+        // Validate response structure
         if (data.success === false) {
-          throw new Error(data.message || data.error || 'Request failed');
+          throw new Error(data.message || data.error || 'Server returned error response');
         }
         
-        // Handle different response formats
+        // Handle different response formats gracefully
         if (data.success && data.response) {
           // Netlify Function response format
           return {
@@ -131,12 +157,33 @@ export default function Chat() {
         } else if (data.assistantMessage) {
           // Express server response format
           return data;
+        } else if (data.content || data.message) {
+          // Alternative response formats
+          return {
+            success: true,
+            conversationId: data.conversationId || conversationId,
+            response: data.content || data.message,
+            assistantMessage: {
+              content: data.content || data.message
+            }
+          };
         }
         
         return data;
       } catch (error) {
-        console.error('Network/API Error:', error);
-        throw error;
+        console.error('Send message error:', error);
+        
+        // Provide more helpful error messages
+        if (error instanceof Error) {
+          if (error.message.includes('fetch')) {
+            throw new Error('Network error: Could not connect to server');
+          } else if (error.message.includes('JSON')) {
+            throw new Error('Server response format error. Please try again.');
+          }
+          throw error;
+        }
+        
+        throw new Error('Unknown error occurred while sending message');
       }
     },
     onSuccess: (data, variables) => {
