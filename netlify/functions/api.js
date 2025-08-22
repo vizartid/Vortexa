@@ -175,7 +175,14 @@ app.get('/api/models', (req, res) => {
     {
       id: "gemini-1.5-flash",
       name: "Google Gemini 1.5 Flash",
-      description: "Fast and efficient model untuk chat dan text generation"
+      description: "Fast and efficient model untuk chat dan text generation",
+      isPrimary: true
+    },
+    {
+      id: "claude-3-haiku",
+      name: "Claude 3 Haiku",
+      description: "Anthropic's fast and efficient model untuk quick responses",
+      isPrimary: false
     }
   ];
   res.json({ models });

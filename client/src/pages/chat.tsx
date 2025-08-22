@@ -6,6 +6,7 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
+import { ModelSelector } from "@/components/ModelSelector";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,7 @@ export default function Chat() {
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>();
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-1.5-flash");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -67,14 +69,15 @@ export default function Chat() {
       attachments: FileAttachment[];
       conversationId?: string;
     }) => {
-      console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
+      console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length, model: selectedModel });
 
       // Prepare JSON payload
       const payload = {
         message: message.trim(),
         userId: 'default-user',
         conversationId,
-        attachments
+        attachments,
+        model: selectedModel
       };
 
       try {
@@ -389,8 +392,14 @@ export default function Chat() {
             </div>
           </div>
 
-          {currentConversationId && (
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            {/* Model Selector */}
+            <ModelSelector 
+              selectedModel={selectedModel} 
+              onModelChange={setSelectedModel} 
+            />
+            
+            {currentConversationId && (
               <Button
                 variant="outline"
                 size="sm"
@@ -400,8 +409,8 @@ export default function Chat() {
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Messages */}
