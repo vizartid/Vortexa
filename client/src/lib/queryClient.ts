@@ -28,10 +28,12 @@ export async function apiRequest(
       const baseUrl = 'http://localhost:5000';
       fullUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
     } else {
-      // In production, map /api/* to /.netlify/functions/*
-      if (url.startsWith('/api/')) {
-        const functionName = url.replace('/api/', '');
-        fullUrl = `/.netlify/functions/${functionName}`;
+      // In production, map /api/chat to /.netlify/functions/chat
+      if (url === '/api/chat') {
+        fullUrl = '/.netlify/functions/chat';
+      } else if (url.startsWith('/api/')) {
+        // For other API endpoints, use the api function
+        fullUrl = '/.netlify/functions/api';
       } else if (url.startsWith('/')) {
         fullUrl = `/.netlify/functions${url}`;
       } else {
