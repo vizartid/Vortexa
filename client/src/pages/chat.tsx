@@ -82,22 +82,42 @@ export default function Chat() {
         const response = await apiRequest('POST', '/api/chat', payload);
 
         console.log('API Response status:', response.status);
+        console.log('API Response headers:', response.headers.get('content-type'));
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error Response:', errorText);
           let errorMessage = 'Failed to send message';
           try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.message || errorMessage;
-          } catch (e) {
-            errorMessage = `Server error (${response.status})`;
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (parseError) {
+            // If we can't parse JSON, try to get text
+            try {
+              const errorText = await response.text();
+              console.error('Non-JSON API Error Response:', errorText);
+              errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
+            } catch (textError) {
+              errorMessage = `Server error (${response.status})`;
+            }
           }
           throw new Error(errorMessage);
         }
 
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.warn('Response is not JSON:', contentType);
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          throw new Error('Server returned invalid response format');
+        }
+
         const data = await response.json();
         console.log('API Response data:', data);
+        
+        // Check if response indicates success
+        if (data.success === false) {
+          throw new Error(data.message || data.error || 'Request failed');
+        }
         
         // Handle different response formats
         if (data.success && data.response) {
