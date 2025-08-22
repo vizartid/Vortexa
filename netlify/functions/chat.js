@@ -1,12 +1,14 @@
 
 export async function handler(event, context) {
-  // Handle CORS
+  // Handle CORS for all requests
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    'Content-Type': 'application/json',
   };
 
+  // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -15,22 +17,45 @@ export async function handler(event, context) {
     };
   }
 
+  // Only allow POST requests for chat
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ error: 'Method not allowed' }),
+      body: JSON.stringify({ 
+        error: 'Method not allowed',
+        message: `${event.httpMethod} method is not supported. Use POST instead.`,
+        allowedMethods: ['POST']
+      }),
     };
   }
 
   try {
-    const { message, conversationId, userId, attachments } = JSON.parse(event.body);
-    
-    if (!message) {
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = JSON.parse(event.body || '{}');
+    } catch (parseError) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Message is required' }),
+        body: JSON.stringify({ 
+          error: 'Invalid JSON',
+          message: 'Request body must be valid JSON'
+        }),
+      };
+    }
+
+    const { message, conversationId, userId, attachments } = requestBody;
+    
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Message is required',
+          message: 'Please provide a non-empty message'
+        }),
       };
     }
 
@@ -54,7 +79,7 @@ export async function handler(event, context) {
       },
       body: JSON.stringify({
         contents: [{ 
-          parts: [{ text: message }] 
+          parts: [{ text: message.trim() }] 
         }],
         generationConfig: {
           temperature: 0.7,
@@ -64,14 +89,23 @@ export async function handler(event, context) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.text();
       console.error('Gemini API Error:', errorData);
+      
+      let errorMessage = 'Unknown error from Gemini API';
+      try {
+        const parsedError = JSON.parse(errorData);
+        errorMessage = parsedError.error?.message || errorMessage;
+      } catch (e) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
           error: 'Gemini API failed',
-          details: errorData.error?.message || 'Unknown error'
+          message: errorMessage
         }),
       };
     }
@@ -83,7 +117,8 @@ export async function handler(event, context) {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: 'Invalid response from Gemini API'
+          error: 'Invalid response from Gemini API',
+          message: 'No content received from AI'
         }),
       };
     }
@@ -110,7 +145,7 @@ export async function handler(event, context) {
     const completionTokens = Math.ceil(cleanedText.length / 4);
 
     // Use provided conversationId or generate a new one
-    const currentConversationId = conversationId || Date.now().toString();
+    const currentConversationId = conversationId || `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Return response
     return {
@@ -119,16 +154,16 @@ export async function handler(event, context) {
       body: JSON.stringify({
         conversationId: currentConversationId,
         userMessage: {
-          id: Date.now().toString() + '-user',
+          id: `${Date.now()}-user-${Math.random().toString(36).substr(2, 9)}`,
           conversationId: currentConversationId,
           role: 'user',
-          content: message,
+          content: message.trim(),
           attachments: null,
           metadata: { tokens: promptTokens },
           createdAt: new Date().toISOString()
         },
         assistantMessage: {
-          id: Date.now().toString() + '-assistant',
+          id: `${Date.now()}-assistant-${Math.random().toString(36).substr(2, 9)}`,
           conversationId: currentConversationId,
           role: 'assistant',
           content: cleanedText,
@@ -145,13 +180,13 @@ export async function handler(event, context) {
     };
 
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Chat function error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message
+        message: error.message || 'An unexpected error occurred'
       }),
     };
   }

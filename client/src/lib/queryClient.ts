@@ -19,20 +19,21 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   try {
-    // Use Netlify Functions for API calls when in production
-    const baseUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5000' 
-      : '';
+    // Check if we're in development (localhost) or production
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Convert /api/* to /.netlify/functions/* for production
     let fullUrl;
-    if (window.location.hostname === 'localhost') {
+    if (isLocalhost) {
+      // In development, use the local Express server
+      const baseUrl = 'http://localhost:5000';
       fullUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
     } else {
-      // In production, map /api/chat to /.netlify/functions/chat
+      // In production, map /api/* to /.netlify/functions/*
       if (url.startsWith('/api/')) {
         const functionName = url.replace('/api/', '');
         fullUrl = `/.netlify/functions/${functionName}`;
+      } else if (url.startsWith('/')) {
+        fullUrl = `/.netlify/functions${url}`;
       } else {
         fullUrl = url;
       }
