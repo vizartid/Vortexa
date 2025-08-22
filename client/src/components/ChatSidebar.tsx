@@ -80,7 +80,7 @@ export function ChatSidebar({
   };
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50">
+    <div className="flex h-screen flex-col bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50">
       {/* Header */}
       <div className="p-4 border-b border-slate-700/50 flex-shrink-0">
         <div className="flex items-center space-x-3 mb-4">
@@ -105,9 +105,9 @@ export function ChatSidebar({
       </div>
 
       {/* Conversations List */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-2">
+          <div className="p-4 space-y-2 min-h-full">
             {isLoadingConversations ? (
               <div className="space-y-2">
                 {[...Array(3)].map((_, i) => (
@@ -152,10 +152,12 @@ export function ChatSidebar({
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-slate-400 px-2">
-                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm font-medium mb-2">No conversations yet</p>
-                <p className="text-xs opacity-80 leading-relaxed">Start a new conversation to get started</p>
+              <div className="flex items-center justify-center min-h-[calc(100vh-120px)] text-slate-400 px-2">
+                <div className="text-center">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm font-medium mb-2">No conversations yet</p>
+                  <p className="text-xs opacity-80 leading-relaxed">Start a new conversation to get started</p>
+                </div>
               </div>
             )}
           </div>
@@ -180,7 +182,7 @@ export function ChatSidebar({
   }
 
   return (
-    <div className="w-80 border-r border-slate-700/50 bg-slate-900/95 backdrop-blur-sm">
+    <div className="w-80 h-screen border-r border-slate-700/50 bg-slate-900/95 backdrop-blur-sm">
       <SidebarContent />
     </div>
   );
