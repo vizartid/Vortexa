@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get conversations for user
   app.get("/api/conversations", async (req, res) => {
     try {
-      const userId = req.query.userId as string || "default-user";
+      const userId = req.query.userId as string || null;
       const conversations = await storage.getConversations(userId);
       res.json({ conversations });
     } catch (error) {
@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new conversation
   app.post("/api/conversations", async (req, res) => {
     try {
-      const { title, userId = "default-user" } = req.body;
+      const { title, userId = null } = req.body;
 
       const validatedData = insertConversationSchema.parse({
         title: title || "New Conversation",
@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!currentConversationId) {
         const conversation = await storage.createConversation({
           title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
-          userId: userId || "default-user", // Ensure userId is a string or default
+          userId: userId || null, // Use null for anonymous users
         });
         currentConversationId = conversation.id;
       }
