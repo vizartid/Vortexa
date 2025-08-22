@@ -1,48 +1,45 @@
 
 export async function handler(event, context) {
-  // Handle CORS for all requests
+  // Always ensure JSON response headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
   };
+
+  // Helper function to ensure JSON response
+  function jsonResponse(statusCode, data) {
+    return {
+      statusCode,
+      headers,
+      body: JSON.stringify(data)
+    };
+  }
 
   // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ message: 'CORS preflight successful' }),
-    };
+    return jsonResponse(200, { message: 'CORS preflight successful' });
   }
 
   // Handle GET request for testing
   if (event.httpMethod === 'GET') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: 'Chat function is working!',
-        status: 'ok',
-        method: 'GET',
-        supportedMethods: ['POST'],
-        timestamp: new Date().toISOString()
-      }),
-    };
+    return jsonResponse(200, {
+      message: 'Chat function is working!',
+      status: 'ok',
+      method: 'GET',
+      supportedMethods: ['POST'],
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Only allow POST requests for chat functionality
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({
-        error: 'Method not allowed',
-        message: `${event.httpMethod} method is not supported. Use POST instead.`,
-        allowedMethods: ['POST', 'GET', 'OPTIONS']
-      }),
-    };
+    return jsonResponse(405, {
+      error: 'Method not allowed',
+      message: `${event.httpMethod} method is not supported. Use POST instead.`,
+      allowedMethods: ['POST', 'GET', 'OPTIONS']
+    });
   }
 
   try {
@@ -54,40 +51,28 @@ export async function handler(event, context) {
       requestBody = JSON.parse(event.body || '{}');
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: 'Invalid JSON',
-          message: 'Request body must be valid JSON'
-        }),
-      };
+      return jsonResponse(400, {
+        error: 'Invalid JSON',
+        message: 'Request body must be valid JSON'
+      });
     }
 
     const { message, conversationId, userId, attachments } = requestBody;
 
     if (!message || typeof message !== 'string' || message.trim() === '') {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: 'Message is required',
-          message: 'Please provide a non-empty message'
-        }),
-      };
+      return jsonResponse(400, {
+        error: 'Message is required',
+        message: 'Please provide a non-empty message'
+      });
     }
 
     const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) {
       console.error('GOOGLE_API_KEY not found in environment');
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Gemini API key not configured',
-          message: 'Please set GOOGLE_API_KEY in Netlify environment variables'
-        }),
-      };
+      return jsonResponse(500, {
+        error: 'Gemini API key not configured',
+        message: 'Please set GOOGLE_API_KEY in Netlify environment variables'
+      });
     }
 
     // Call Gemini API with better error handling
@@ -113,15 +98,11 @@ export async function handler(event, context) {
       });
     } catch (fetchError) {
       console.error('Network error calling Gemini API:', fetchError);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Network error',
-          message: 'Failed to connect to Gemini API',
-          success: false
-        }),
-      };
+      return jsonResponse(500, {
+        error: 'Network error',
+        message: 'Failed to connect to Gemini API',
+        success: false
+      });
     }
 
     if (!response.ok) {
@@ -136,15 +117,11 @@ export async function handler(event, context) {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
 
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Gemini API failed',
-          message: errorMessage,
-          success: false
-        }),
-      };
+      return jsonResponse(500, {
+        error: 'Gemini API failed',
+        message: errorMessage,
+        success: false
+      });
     }
 
     let data;
@@ -152,28 +129,20 @@ export async function handler(event, context) {
       data = await response.json();
     } catch (jsonError) {
       console.error('Failed to parse Gemini response as JSON:', jsonError);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Invalid response format',
-          message: 'Gemini API returned invalid JSON',
-          success: false
-        }),
-      };
+      return jsonResponse(500, {
+        error: 'Invalid response format',
+        message: 'Gemini API returned invalid JSON',
+        success: false
+      });
     }
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       console.error('Invalid Gemini response structure:', data);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Invalid response from Gemini API',
-          message: 'No content received from AI',
-          success: false
-        }),
-      };
+      return jsonResponse(500, {
+        error: 'Invalid response from Gemini API',
+        message: 'No content received from AI',
+        success: false
+      });
     }
 
     const rawText = data.candidates[0].content.parts[0].text;
@@ -203,45 +172,37 @@ export async function handler(event, context) {
     console.log('Sending successful response');
 
     // Return response in the format expected by frontend
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: "Chat response generated successfully",
-        conversationId: currentConversationId,
-        response: cleanedText,
-        userMessage: {
-          id: `user-${Date.now()}`,
-          role: 'user',
-          content: message.trim(),
-          timestamp: new Date().toISOString()
-        },
-        assistantMessage: {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: cleanedText,
-          timestamp: new Date().toISOString(),
-          metadata: {
-            model: 'gemini-1.5-flash',
-            prompt_tokens: promptTokens,
-            completion_tokens: completionTokens,
-            total_tokens: promptTokens + completionTokens
-          }
+    return jsonResponse(200, {
+      success: true,
+      message: "Chat response generated successfully",
+      conversationId: currentConversationId,
+      response: cleanedText,
+      userMessage: {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: message.trim(),
+        timestamp: new Date().toISOString()
+      },
+      assistantMessage: {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: cleanedText,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          model: 'gemini-1.5-flash',
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: promptTokens + completionTokens
         }
-      }),
-    };
+      }
+    });
 
   } catch (error) {
     console.error('Chat function error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: 'Internal server error',
-        message: error.message || 'An unexpected error occurred',
-        success: false
-      }),
-    };
+    return jsonResponse(500, {
+      error: 'Internal server error',
+      message: error.message || 'An unexpected error occurred',
+      success: false
+    });
   }
 }
