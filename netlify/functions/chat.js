@@ -1,4 +1,3 @@
-
 export async function handler(event, context) {
   // Handle CORS for all requests
   const headers = {
@@ -22,7 +21,7 @@ export async function handler(event, context) {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         error: 'Method not allowed',
         message: `${event.httpMethod} method is not supported. Use POST instead.`,
         allowedMethods: ['POST']
@@ -39,7 +38,7 @@ export async function handler(event, context) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Invalid JSON',
           message: 'Request body must be valid JSON'
         }),
@@ -47,12 +46,12 @@ export async function handler(event, context) {
     }
 
     const { message, conversationId, userId, attachments } = requestBody;
-    
+
     if (!message || typeof message !== 'string' || message.trim() === '') {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Message is required',
           message: 'Please provide a non-empty message'
         }),
@@ -64,7 +63,7 @@ export async function handler(event, context) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Gemini API key not configured',
           message: 'Please set GOOGLE_API_KEY in Netlify environment variables'
         }),
@@ -76,12 +75,12 @@ export async function handler(event, context) {
     try {
       response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          contents: [{ 
-            parts: [{ text: message.trim() }] 
+          contents: [{
+            parts: [{ text: message.trim() }]
           }],
           generationConfig: {
             temperature: 0.7,
@@ -94,7 +93,7 @@ export async function handler(event, context) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Network error',
           message: 'Failed to connect to Gemini API'
         }),
@@ -104,7 +103,7 @@ export async function handler(event, context) {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Gemini API Error:', response.status, errorData);
-      
+
       let errorMessage = 'Unknown error from Gemini API';
       try {
         const parsedError = JSON.parse(errorData);
@@ -116,7 +115,7 @@ export async function handler(event, context) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Gemini API failed',
           message: errorMessage
         }),
@@ -131,19 +130,19 @@ export async function handler(event, context) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Invalid response format',
           message: 'Gemini API returned invalid JSON'
         }),
       };
     }
-    
+
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       console.error('Invalid Gemini response structure:', data);
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Invalid response from Gemini API',
           message: 'No content received from AI'
         }),
@@ -151,7 +150,7 @@ export async function handler(event, context) {
     }
 
     const rawText = data.candidates[0].content.parts[0].text;
-    
+
     // Clean markdown formatting
     const cleanedText = rawText
       .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -171,37 +170,33 @@ export async function handler(event, context) {
     const promptTokens = Math.ceil(message.length / 4);
     const completionTokens = Math.ceil(cleanedText.length / 4);
 
-    // Use provided conversationId or generate a new one
-    const currentConversationId = conversationId || `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate conversation ID for this session (don't persist to database)
+    const currentConversationId = conversationId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Return response in the expected format
+    // Return simple response without database operations
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
+        success: true,
+        message: "Chat response generated successfully",
         conversationId: currentConversationId,
+        response: cleanedText,
         userMessage: {
-          id: `${Date.now()}-user-${Math.random().toString(36).substr(2, 9)}`,
-          conversationId: currentConversationId,
           role: 'user',
           content: message.trim(),
-          attachments: attachments || null,
-          metadata: { tokens: promptTokens },
-          createdAt: new Date().toISOString()
+          timestamp: new Date().toISOString()
         },
         assistantMessage: {
-          id: `${Date.now()}-assistant-${Math.random().toString(36).substr(2, 9)}`,
-          conversationId: currentConversationId,
           role: 'assistant',
           content: cleanedText,
-          attachments: null,
+          timestamp: new Date().toISOString(),
           metadata: {
-            tokens: completionTokens,
             model: 'gemini-1.5-flash',
             prompt_tokens: promptTokens,
-            completion_tokens: completionTokens
-          },
-          createdAt: new Date().toISOString()
+            completion_tokens: completionTokens,
+            total_tokens: promptTokens + completionTokens
+          }
         }
       }),
     };
@@ -211,7 +206,7 @@ export async function handler(event, context) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         error: 'Internal server error',
         message: error.message || 'An unexpected error occurred'
       }),

@@ -28,13 +28,9 @@ export default function Chat() {
   const [, setLocation] = useLocation();
   // Removed localStorage functionality
 
-  // Mock data for sidebar conversations (replace with actual data fetching if needed)
-  // This mock data will be enhanced by localStorage later.
-  const conversations = [
-    { id: "conv-1", title: "Conversation 1", lastMessage: "Hello there!" },
-    { id: "conv-2", title: "Conversation 2", lastMessage: "How can I help you?" },
-  ];
-  const activeConversationId = currentConversationId; // This should be managed by your state
+  // Mock conversations data (database disabled)
+  const conversationsData = { conversations: [] };
+  const isLoadingConversations = false;
 
   // Welcome message for users
   useEffect(() => {
@@ -45,25 +41,15 @@ export default function Chat() {
     });
   }, []);
 
-  // Fetch conversations
-  const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
-    queryKey: ["/api/conversations"],
+  const messagesQuery = useQuery({
+    queryKey: ["/api/conversations", currentConversationId, "messages"],
     queryFn: async () => {
-      if (!currentConversationId) {
-        return [];
-      }
-
-      const response = await fetch(`/api/conversations/${currentConversationId}/messages`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch messages: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('Fetched messages:', data);
-      return data?.messages || [];
+      // Return empty array for now, messages will be added via onSuccess
+      return [];
     },
     enabled: !!currentConversationId,
-    retry: 2,
-    staleTime: 1000,
+    retry: false,
+    staleTime: Infinity,
   });
 
 
@@ -71,13 +57,6 @@ export default function Chat() {
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
   // Dummy query to maintain the same interface
-  const messagesQuery = {
-    data: localMessages,
-    isLoading: false,
-    error: null
-  };
-
-
   const messagesData = messagesQuery.data as Message[] || [];
   const isLoading = messagesQuery.isLoading;
 
@@ -130,20 +109,44 @@ export default function Chat() {
     onSuccess: (data, variables) => {
       console.log('Message sent successfully:', data);
 
-      // Set conversation ID immediately
-      setCurrentConversationId(data.conversationId);
+      if (data.success && data.conversationId) {
+        setCurrentConversationId(data.conversationId);
+
+        // Add messages to local state instead of database
+        const newMessages = [
+          {
+            id: `user-${Date.now()}`,
+            conversationId: data.conversationId,
+            role: 'user' as const,
+            content: variables.message,
+            attachments: null,
+            metadata: null,
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: `assistant-${Date.now()}`,
+            conversationId: data.conversationId,
+            role: 'assistant' as const,
+            content: data.response,
+            attachments: null,
+            metadata: data.assistantMessage.metadata,
+            createdAt: new Date().toISOString()
+          }
+        ];
+
+        // Update query cache with new messages
+        queryClient.setQueryData(
+          ["/api/conversations", data.conversationId, "messages"],
+          (oldData: any) => [...(oldData || []), ...newMessages]
+        );
+      }
+
       setIsTyping(false);
 
-      // Add both messages to local state
-      setLocalMessages(prev => [
-        ...prev,
-        data.userMessage,
-        data.assistantMessage
-      ]);
-
       toast({
-        title: "Message sent!",
-        description: "Your message was sent successfully.",
+        title: "Pesan Terkirim",
+        description: "Pesan Anda berhasil dikirim",
+        duration: 2000,
       });
     },
     onError: (error) => {
