@@ -249,47 +249,37 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Mobile Burger Menu di kanan atas */}
-      {isMobile && (
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
-          >
-            {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </Button>
-        </div>
-      )}
+      
 
       <div className="flex h-full w-full">
         {/* Sidebar */}
-        <div className={`
-          ${isMobile ? (
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          ) : (
-            isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
-          ${isMobile ? 'fixed' : 'relative'}
-          inset-y-0 left-0
-          ${isDesktopSidebarOpen && !isMobile ? 'w-80' : 'w-80'}
-          bg-slate-800/50
-          backdrop-blur-sm
-          border-r border-slate-700
-          transition-all duration-300 ease-in-out
-          ${isMobile ? 'z-40' : 'z-10'}
-        `}>
+        {!isMobile && (
+          <div className={`
+            ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            relative inset-y-0 left-0 w-80
+            transition-all duration-300 ease-in-out
+            z-10
+          `}>
+            <ChatSidebar
+              currentConversationId={currentConversationId}
+              onConversationSelect={handleSelectConversation}
+              onNewConversation={handleNewConversation}
+              conversations={conversationsData?.conversations || []}
+              isLoadingConversations={isLoadingConversations}
+            />
+          </div>
+        )}
+
+        {/* Mobile Sidebar */}
+        {isMobile && (
           <ChatSidebar
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
             onNewConversation={handleNewConversation}
-            // In serverless mode, conversations might be managed differently (e.g., local storage, or simplified list)
-            // For now, using mock data or empty if no data fetched.
             conversations={conversationsData?.conversations || []}
             isLoadingConversations={isLoadingConversations}
           />
-        </div>
+        )}
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
