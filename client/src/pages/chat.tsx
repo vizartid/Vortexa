@@ -249,29 +249,14 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen bg-background">
-      
-
-      <div className="flex h-full w-full">
-        {/* Sidebar */}
-        {!isMobile && (
-          <div className={`
-            ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            relative inset-y-0 left-0 w-80
-            transition-all duration-300 ease-in-out
-            z-10
-          `}>
-            <ChatSidebar
-              currentConversationId={currentConversationId}
-              onConversationSelect={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              conversations={conversationsData?.conversations || []}
-              isLoadingConversations={isLoadingConversations}
-            />
-          </div>
-        )}
-
-        {/* Mobile Sidebar */}
-        {isMobile && (
+      {/* Desktop Sidebar - positioned absolute to allow chat to expand behind it */}
+      {!isMobile && (
+        <div className={`
+          ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          fixed inset-y-0 left-0 w-80
+          transition-all duration-300 ease-in-out
+          z-10
+        `}>
           <ChatSidebar
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
@@ -279,9 +264,24 @@ export default function Chat() {
             conversations={conversationsData?.conversations || []}
             isLoadingConversations={isLoadingConversations}
           />
-        )}
+        </div>
+      )}
 
-        <div className="flex-1 flex flex-col min-w-0">
+      {/* Mobile Sidebar */}
+      {isMobile && (
+        <ChatSidebar
+          currentConversationId={currentConversationId}
+          onConversationSelect={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          conversations={conversationsData?.conversations || []}
+          isLoadingConversations={isLoadingConversations}
+        />
+      )}
+
+      {/* Main chat area - takes full width, with padding when sidebar is open */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+        !isMobile && isDesktopSidebarOpen ? 'ml-80' : 'ml-0'
+      }`}>
           {/* Header */}
           <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
             <div className="flex items-center gap-3">
@@ -334,38 +334,48 @@ export default function Chat() {
 
           {/* Messages */}
           <ScrollArea className="flex-1 p-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : messagesData && messagesData.length > 0 ? (
-              <div className="space-y-4 max-w-4xl mx-auto">
-                {messagesData.map((message) => (
-                  <ChatMessage key={message.id} message={message} />
-                ))}
-                {isTyping && <TypingIndicator />}
-                <div ref={messagesEndRef} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center max-w-md mx-auto">
-                  <img
-                    src={logoImage}
-                    alt="Vortexa Logo"
-                    className="w-16 h-16 mx-auto mb-6 opacity-80"
-                  />
-                  <h2 className="text-2xl font-semibold mb-3 text-foreground">Selamat Datang!</h2>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    Mulai percakapan dengan mengirim pesan di bawah
-                  </p>
+            <div className={`mx-auto w-full transition-all duration-300 ${
+              !isMobile 
+                ? 'max-w-none px-4' 
+                : 'max-w-4xl'
+            }`}>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full min-h-[60vh]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              </div>
-            )}
+              ) : messagesData && messagesData.length > 0 ? (
+                <div className="space-y-4">
+                  {messagesData.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))}
+                  {isTyping && <TypingIndicator />}
+                  <div ref={messagesEndRef} />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center min-h-[60vh]">
+                  <div className="text-center max-w-md mx-auto">
+                    <img
+                      src={logoImage}
+                      alt="Vortexa Logo"
+                      className="w-16 h-16 mx-auto mb-6 opacity-80"
+                    />
+                    <h2 className="text-2xl font-semibold mb-3 text-foreground">Selamat Datang!</h2>
+                    <p className="text-muted-foreground text-lg leading-relaxed">
+                      Mulai percakapan dengan mengirim pesan di bawah
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </ScrollArea>
 
           {/* Input */}
           <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-            <div className="max-w-4xl mx-auto">
+            <div className={`mx-auto w-full transition-all duration-300 ${
+              !isMobile 
+                ? 'max-w-none px-4' 
+                : 'max-w-4xl'
+            }`}>
               <ChatInput
                 onSendMessage={handleSendMessage}
                 disabled={sendMessageMutation.isPending}

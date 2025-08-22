@@ -181,4 +181,45 @@
     background-color: hsl(var(--chat-bubble));
     color: hsl(var(--foreground));
   }
+  
+  /* Responsive chat layout */
+  .chat-container {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .chat-content {
+    transition: max-width 0.3s ease-in-out;
+  }
+  
+  /* Improved responsive breakpoints */
+  @media (min-width: 768px) {
+    .chat-content-wide {
+      max-width: 768px;
+    }
+    
+    .chat-content-narrow {
+      max-width: 640px;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .chat-content-wide {
+      max-width: 896px;
+    }
+    
+    .chat-content-narrow {
+      max-width: 768px;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .chat-content-wide {
+      max-width: 1024px;
+    }
+    
+    .chat-content-narrow {
+      max-width: 896px;
+    }
+  }
 }
