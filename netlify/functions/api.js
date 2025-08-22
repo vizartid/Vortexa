@@ -44,7 +44,7 @@ app.get('/api/health', (req, res) => {
 // Chat endpoint with Gemini AI integration
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, conversationId, userId } = req.body;
     
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -99,15 +99,15 @@ app.post('/api/chat', async (req, res) => {
     const promptTokens = Math.ceil(message.length / 4);
     const completionTokens = Math.ceil(cleanedText.length / 4);
 
-    // Generate a simple conversation ID for this session
-    const conversationId = Date.now().toString();
+    // Use provided conversationId or generate a new one
+    const currentConversationId = conversationId || Date.now().toString();
 
     // Return response in the format expected by your frontend
     res.json({
-      conversationId,
+      conversationId: currentConversationId,
       userMessage: {
         id: Date.now().toString() + '-user',
-        conversationId,
+        conversationId: currentConversationId,
         role: 'user',
         content: message,
         attachments: null,
@@ -116,7 +116,7 @@ app.post('/api/chat', async (req, res) => {
       },
       assistantMessage: {
         id: Date.now().toString() + '-assistant',
-        conversationId,
+        conversationId: currentConversationId,
         role: 'assistant',
         content: cleanedText,
         attachments: null,

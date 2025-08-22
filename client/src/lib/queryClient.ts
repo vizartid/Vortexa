@@ -19,7 +19,14 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   try {
-    const res = await fetch(url, {
+    // Use Netlify Functions for API calls when in production
+    const baseUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000' 
+      : window.location.origin;
+    
+    const fullUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
+    
+    const res = await fetch(fullUrl, {
       method,
       headers: data ? { "Content-Type": "application/json" } : {},
       body: data ? JSON.stringify(data) : undefined,
