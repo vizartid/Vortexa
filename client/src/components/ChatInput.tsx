@@ -42,9 +42,13 @@ export function ChatInput({
     
     if ((trimmedMessage || attachments.length > 0) && !disabled) {
       console.log('Submitting message:', { message: trimmedMessage, attachments: attachments.length });
-      onSendMessage(trimmedMessage, attachments);
-      setMessage("");
-      setAttachments([]);
+      try {
+        onSendMessage(trimmedMessage, attachments);
+        setMessage("");
+        setAttachments([]);
+      } catch (error) {
+        console.error('Error submitting message:', error);
+      }
     } else {
       console.log('Message not submitted:', { 
         hasMessage: !!trimmedMessage, 
