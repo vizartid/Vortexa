@@ -281,7 +281,9 @@ export default function Chat() {
           />
         )}
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+          !isMobile && !isDesktopSidebarOpen ? 'ml-0' : ''
+        }`}>
           {/* Header */}
           <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
             <div className="flex items-center gap-3">
@@ -334,7 +336,11 @@ export default function Chat() {
 
           {/* Messages */}
           <ScrollArea className="flex-1 p-4">
-            <div className={`mx-auto ${isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-3xl'} transition-all duration-300`}>
+            <div className={`mx-auto w-full transition-all duration-300 ${
+              !isMobile 
+                ? (isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-none px-8') 
+                : 'max-w-4xl'
+            }`}>
               {isLoading ? (
                 <div className="flex items-center justify-center h-full min-h-[60vh]">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -367,7 +373,11 @@ export default function Chat() {
 
           {/* Input */}
           <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-            <div className={`mx-auto ${isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-3xl'} transition-all duration-300`}>
+            <div className={`mx-auto w-full transition-all duration-300 ${
+              !isMobile 
+                ? (isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-none px-8') 
+                : 'max-w-4xl'
+            }`}>
               <ChatInput
                 onSendMessage={handleSendMessage}
                 disabled={sendMessageMutation.isPending}
