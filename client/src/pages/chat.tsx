@@ -49,18 +49,6 @@ export default function Chat() {
   const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
     queryKey: ["/api/conversations"],
     queryFn: async () => {
-      const response = await fetch("/api/conversations");
-      if (!response.ok) {
-        throw new Error("Failed to fetch conversations");
-      }
-      return await response.json();
-    },
-  });
-
-
-  const messagesQuery = useQuery({
-    queryKey: ["/api/conversations", currentConversationId, "messages"],
-    queryFn: async () => {
       if (!currentConversationId) {
         return [];
       }
@@ -78,6 +66,18 @@ export default function Chat() {
     staleTime: 1000,
   });
 
+
+  // For serverless mode, we'll manage messages in local state
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
+
+  // Dummy query to maintain the same interface
+  const messagesQuery = {
+    data: localMessages,
+    isLoading: false,
+    error: null
+  };
+
+
   const messagesData = messagesQuery.data as Message[] || [];
   const isLoading = messagesQuery.isLoading;
 
@@ -92,7 +92,7 @@ export default function Chat() {
       conversationId?: string;
     }) => {
       console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
-      
+
       // Prepare JSON payload instead of FormData for Netlify Functions
       const payload = {
         message,
@@ -129,22 +129,21 @@ export default function Chat() {
     },
     onSuccess: (data, variables) => {
       console.log('Message sent successfully:', data);
-      
+
       // Set conversation ID immediately
       setCurrentConversationId(data.conversationId);
       setIsTyping(false);
 
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/conversations", data.conversationId, "messages"]
-      });
-      
-      // Show success message
+      // Add both messages to local state
+      setLocalMessages(prev => [
+        ...prev,
+        data.userMessage,
+        data.assistantMessage
+      ]);
+
       toast({
-        title: "Pesan Terkirim",
-        description: "Pesan Anda berhasil dikirim",
-        duration: 2000,
+        title: "Message sent!",
+        description: "Your message was sent successfully.",
       });
     },
     onError: (error) => {
@@ -160,14 +159,11 @@ export default function Chat() {
 
   const clearConversationMutation = useMutation({
     mutationFn: async (conversationId: string) => {
-      return apiRequest(`/api/conversations/${conversationId}/messages`, {
-        method: 'DELETE',
-      });
+      // In serverless mode, clearing conversation means resetting local messages
+      setLocalMessages([]);
+      // Optionally, you could call a new serverless function to clear history if needed
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/conversations", currentConversationId, "messages"]
-      });
       toast({
         title: "Success",
         description: "Conversation cleared successfully",
@@ -194,23 +190,34 @@ export default function Chat() {
   };
 
   const handleClearConversation = () => {
-    if (currentConversationId) {
-      clearConversationMutation.mutate(currentConversationId);
-    }
+    // Clear local messages
+    setLocalMessages([]);
+    // If you want to clear history on the server, you'd need a dedicated serverless function for it.
+    // For now, we just clear the local state.
+    setCurrentConversationId(undefined); // Reset conversation context
+  };
+
+  // Simplified conversation creation for serverless mode
+  const createConversation = () => {
+    const newId = `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setCurrentConversationId(newId);
+    setLocalMessages([]);
   };
 
   const handleNewConversation = () => {
-    setCurrentConversationId(undefined);
-    setIsSidebarOpen(false); // Close sidebar on new conversation
+    createConversation();
   };
 
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
     setIsSidebarOpen(false); // Close sidebar on selection
+    // In serverless mode, you might want to load previous messages if you store them locally
+    // For this example, we'll assume a fresh start for selected conversations or no history load
+    setLocalMessages([]);
   };
 
   const handleDeleteConversation = (conversationId: string) => {
-    // Implement delete conversation logic here if needed
+    // Implement delete conversation logic here if needed (e.g., from local storage)
     console.log("Deleting conversation:", conversationId);
   };
 
@@ -256,7 +263,8 @@ export default function Chat() {
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
             onNewConversation={handleNewConversation}
-            // Use server conversations or empty array
+            // In serverless mode, conversations might be managed differently (e.g., local storage, or simplified list)
+            // For now, using mock data or empty if no data fetched.
             conversations={conversationsData?.conversations || []}
             isLoadingConversations={isLoadingConversations}
           />
@@ -304,7 +312,7 @@ export default function Chat() {
                   variant="outline"
                   size="sm"
                   onClick={handleClearConversation}
-                  disabled={clearConversationMutation.isPending}
+                  disabled={sendMessageMutation.isPending} // Disable if a message is being sent
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Clear

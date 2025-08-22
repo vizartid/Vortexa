@@ -71,26 +71,39 @@ export async function handler(event, context) {
       };
     }
 
-    // Call Gemini API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{ 
-          parts: [{ text: message.trim() }] 
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
-        }
-      })
-    });
+    // Call Gemini API with better error handling
+    let response;
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{ 
+            parts: [{ text: message.trim() }] 
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1000,
+          }
+        })
+      });
+    } catch (fetchError) {
+      console.error('Network error calling Gemini API:', fetchError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Network error',
+          message: 'Failed to connect to Gemini API'
+        }),
+      };
+    }
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Gemini API Error:', errorData);
+      console.error('Gemini API Error:', response.status, errorData);
       
       let errorMessage = 'Unknown error from Gemini API';
       try {
@@ -110,9 +123,23 @@ export async function handler(event, context) {
       };
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.error('Failed to parse Gemini response as JSON:', jsonError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Invalid response format',
+          message: 'Gemini API returned invalid JSON'
+        }),
+      };
+    }
     
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      console.error('Invalid Gemini response structure:', data);
       return {
         statusCode: 500,
         headers,
@@ -147,7 +174,7 @@ export async function handler(event, context) {
     // Use provided conversationId or generate a new one
     const currentConversationId = conversationId || `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Return response
+    // Return response in the expected format
     return {
       statusCode: 200,
       headers,
@@ -158,7 +185,7 @@ export async function handler(event, context) {
           conversationId: currentConversationId,
           role: 'user',
           content: message.trim(),
-          attachments: null,
+          attachments: attachments || null,
           metadata: { tokens: promptTokens },
           createdAt: new Date().toISOString()
         },
