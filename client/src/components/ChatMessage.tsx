@@ -46,22 +46,22 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("flex items-start max-w-3xl", isUser ? "flex-row-reverse space-x-reverse space-x-2" : "space-x-2")}>
-        <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+      <div className={cn("flex items-start max-w-3xl", isUser ? "flex-row-reverse space-x-reverse space-x-3" : "space-x-3")}>
+        <div className="w-9 h-9 bg-accent rounded-full flex items-center justify-center flex-shrink-0 mt-1">
           {isUser ? (
             <User className="w-4 h-4 text-primary" />
           ) : (
             <img
               src={logoImage}
               alt="Vortexa AI"
-              className="w-5 h-5 object-contain"
+              className="w-6 h-6 object-contain"
             />
           )}
         </div>
         
         <div
           className={cn(
-            "p-4 rounded-xl relative group",
+            "px-4 py-3 rounded-xl relative group",
             isUser 
               ? "message-user rounded-tr-md" 
               : "message-assistant rounded-tl-md"
@@ -111,8 +111,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
           )}
 
           {message.content && (
-            <div className="prose prose-sm max-w-none text-inherit">
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <div className="prose max-w-none text-inherit">
+              <p className="whitespace-pre-wrap break-words text-base leading-relaxed font-roboto">{message.content}</p>
             </div>
           )}
           

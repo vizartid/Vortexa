@@ -100,6 +100,12 @@
     font-family: 'Roboto', sans-serif;
     font-weight: 600;
   }
+  
+  /* Font untuk chat messages */
+  .font-roboto {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
 
   /* Hilangkan scroll indicator di semua browser */
   ::-webkit-scrollbar {
