@@ -249,29 +249,14 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen bg-background">
-      
-
-      <div className="flex h-full w-full">
-        {/* Sidebar */}
-        {!isMobile && (
-          <div className={`
-            ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            relative inset-y-0 left-0 w-80
-            transition-all duration-300 ease-in-out
-            z-10
-          `}>
-            <ChatSidebar
-              currentConversationId={currentConversationId}
-              onConversationSelect={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              conversations={conversationsData?.conversations || []}
-              isLoadingConversations={isLoadingConversations}
-            />
-          </div>
-        )}
-
-        {/* Mobile Sidebar */}
-        {isMobile && (
+      {/* Desktop Sidebar - positioned absolute to allow chat to expand behind it */}
+      {!isMobile && (
+        <div className={`
+          ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          fixed inset-y-0 left-0 w-80
+          transition-all duration-300 ease-in-out
+          z-10
+        `}>
           <ChatSidebar
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
@@ -279,11 +264,24 @@ export default function Chat() {
             conversations={conversationsData?.conversations || []}
             isLoadingConversations={isLoadingConversations}
           />
-        )}
+        </div>
+      )}
 
-        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-          !isMobile && !isDesktopSidebarOpen ? 'ml-0' : ''
-        }`}>
+      {/* Mobile Sidebar */}
+      {isMobile && (
+        <ChatSidebar
+          currentConversationId={currentConversationId}
+          onConversationSelect={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          conversations={conversationsData?.conversations || []}
+          isLoadingConversations={isLoadingConversations}
+        />
+      )}
+
+      {/* Main chat area - takes full width, with padding when sidebar is open */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+        !isMobile && isDesktopSidebarOpen ? 'ml-80' : 'ml-0'
+      }`}>
           {/* Header */}
           <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
             <div className="flex items-center gap-3">
@@ -338,7 +336,7 @@ export default function Chat() {
           <ScrollArea className="flex-1 p-4">
             <div className={`mx-auto w-full transition-all duration-300 ${
               !isMobile 
-                ? (isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-none px-8') 
+                ? 'max-w-none px-4' 
                 : 'max-w-4xl'
             }`}>
               {isLoading ? (
@@ -375,7 +373,7 @@ export default function Chat() {
           <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
             <div className={`mx-auto w-full transition-all duration-300 ${
               !isMobile 
-                ? (isDesktopSidebarOpen ? 'max-w-4xl' : 'max-w-none px-8') 
+                ? 'max-w-none px-4' 
                 : 'max-w-4xl'
             }`}>
               <ChatInput
