@@ -12,7 +12,7 @@ export const users = pgTable("users", {
 
 export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
   title: text("title").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

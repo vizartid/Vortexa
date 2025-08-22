@@ -49,13 +49,21 @@ export const storage = {
     }
   },
 
-  async getConversations(userId: string): Promise<Conversation[]> {
+  async getConversations(userId: string | null): Promise<Conversation[]> {
     if (useDatabase && db) {
-      return await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.userId, userId))
-        .orderBy(desc(conversations.updatedAt));
+      if (userId) {
+        return await db
+          .select()
+          .from(conversations)
+          .where(eq(conversations.userId, userId))
+          .orderBy(desc(conversations.updatedAt));
+      } else {
+        return await db
+          .select()
+          .from(conversations)
+          .where(eq(conversations.userId, null))
+          .orderBy(desc(conversations.updatedAt));
+      }
     } else {
       // Memory storage fallback
       return Array.from(memoryStorage.conversations.values())

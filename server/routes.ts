@@ -11,16 +11,16 @@ function estimateTokens(text: string): number {
 }
 
 const sendMessageSchema = z.object({
-  conversationId: z.string().optional(),
-  message: z.string().min(1),
-  userId: z.string().optional().default("default-user"),
-  attachments: z.array(z.object({
-    filename: z.string(),
-    mimeType: z.string(),
-    data: z.string(), // base64 encoded
-    size: z.number(),
-  })).optional(),
-});
+    conversationId: z.string().optional(),
+    message: z.string().min(1),
+    userId: z.string().optional().nullable(),
+    attachments: z.array(z.object({
+      filename: z.string(),
+      mimeType: z.string(),
+      data: z.string(), // base64 encoded
+      size: z.number(),
+    })).optional(),
+  });
 
 // Configure multer for file uploads
 const upload = multer({
@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!currentConversationId) {
         const conversation = await storage.createConversation({
           title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
-          userId,
+          userId: userId || "default-user", // Ensure userId is a string or default
         });
         currentConversationId = conversation.id;
       }
@@ -169,10 +169,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get conversation history for context
       const messages = await storage.getMessages(currentConversationId);
-      
+
       // Import Gemini service
       const { createGeminiChatCompletion } = await import("./services/gemini");
-      
+
       // Generate AI response using Gemini
       const aiResponse = await createGeminiChatCompletion({
         messages: messages,
