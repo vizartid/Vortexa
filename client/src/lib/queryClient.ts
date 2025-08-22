@@ -24,20 +24,20 @@ export async function apiRequest(
 
     let fullUrl;
     if (isLocalhost) {
-      // In development, use the local Express server
-      const baseUrl = 'http://localhost:5000';
-      fullUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
-    } else {
-      // In production, map /api/chat to /.netlify/functions/chat
-      if (url === '/api/chat') {
-        fullUrl = '/.netlify/functions/chat';
-      } else if (url.startsWith('/api/')) {
-        // For other API endpoints, use the api function
-        fullUrl = '/.netlify/functions/api';
-      } else if (url.startsWith('/')) {
-        fullUrl = `/.netlify/functions${url}`;
+      // In development, for chat use Netlify Functions, others use Express
+      if (url.startsWith('/api/chat')) {
+        fullUrl = `${window.location.origin}/.netlify/functions/chat`;
       } else {
-        fullUrl = url;
+        fullUrl = `http://localhost:5000${url}`;
+      }
+    } else {
+      // In production, use Netlify Functions
+      if (url.startsWith('/api/chat')) {
+        fullUrl = `${window.location.origin}/.netlify/functions/chat`;
+      } else {
+        // For other API calls that don't exist in Netlify Functions, return empty response
+        console.log('API call not supported in serverless mode:', url);
+        return { conversations: [], messages: [] };
       }
     }
 

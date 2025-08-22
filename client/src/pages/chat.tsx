@@ -100,6 +100,21 @@ export default function Chat() {
 
         const data = await response.json();
         console.log('API Response data:', data);
+        
+        // Handle different response formats
+        if (data.success && data.response) {
+          // Netlify Function response format
+          return {
+            success: true,
+            conversationId: data.conversationId,
+            response: data.response,
+            assistantMessage: data.assistantMessage
+          };
+        } else if (data.assistantMessage) {
+          // Express server response format
+          return data;
+        }
+        
         return data;
       } catch (error) {
         console.error('Network/API Error:', error);
@@ -109,37 +124,40 @@ export default function Chat() {
     onSuccess: (data, variables) => {
       console.log('Message sent successfully:', data);
 
-      if (data.success && data.conversationId) {
-        setCurrentConversationId(data.conversationId);
+      const conversationId = data.conversationId || currentConversationId || `conv-${Date.now()}`;
+      setCurrentConversationId(conversationId);
 
-        // Add messages to local state instead of database
-        const newMessages = [
-          {
-            id: `user-${Date.now()}`,
-            conversationId: data.conversationId,
-            role: 'user' as const,
-            content: variables.message,
-            attachments: null,
-            metadata: null,
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: `assistant-${Date.now()}`,
-            conversationId: data.conversationId,
-            role: 'assistant' as const,
-            content: data.response,
-            attachments: null,
-            metadata: data.assistantMessage.metadata,
-            createdAt: new Date().toISOString()
-          }
-        ];
+      // Handle both Netlify Function and Express server response formats
+      const assistantContent = data.response || data.assistantMessage?.content || 'No response received';
+      const assistantMetadata = data.assistantMessage?.metadata || null;
+
+      // Add messages to local state instead of database
+      const newMessages = [
+        {
+          id: `user-${Date.now()}`,
+          conversationId: conversationId,
+          role: 'user' as const,
+          content: variables.message,
+          attachments: null,
+          metadata: null,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: `assistant-${Date.now()}`,
+          conversationId: conversationId,
+          role: 'assistant' as const,
+          content: assistantContent,
+          attachments: null,
+          metadata: assistantMetadata,
+          createdAt: new Date().toISOString()
+        }
+      ];
 
         // Update query cache with new messages
-        queryClient.setQueryData(
-          ["/api/conversations", data.conversationId, "messages"],
-          (oldData: any) => [...(oldData || []), ...newMessages]
-        );
-      }
+      queryClient.setQueryData(
+        ["/api/conversations", conversationId, "messages"],
+        (oldData: any) => [...(oldData || []), ...newMessages]
+      );
 
       setIsTyping(false);
 
