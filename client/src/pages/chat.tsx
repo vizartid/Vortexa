@@ -93,35 +93,16 @@ export default function Chat() {
     }) => {
       console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
       
-      const formData = new FormData();
-      formData.append('message', message);
-      formData.append('userId', 'default-user');
-      if (conversationId) {
-        formData.append('conversationId', conversationId);
-      }
-
-      // Add file attachments
-      attachments.forEach((attachment, index) => {
-        try {
-          const byteCharacters = atob(attachment.data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: attachment.mimeType });
-          const file = new File([blob], attachment.filename, { type: attachment.mimeType });
-          formData.append('files', file);
-        } catch (error) {
-          console.error('Error processing attachment:', attachment.filename, error);
-        }
-      });
+      // Prepare JSON payload instead of FormData for Netlify Functions
+      const payload = {
+        message,
+        userId: 'default-user',
+        conversationId,
+        attachments
+      };
 
       try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          body: formData,
-        });
+        const response = await apiRequest('POST', '/api/chat', payload);
 
         console.log('API Response status:', response.status);
 

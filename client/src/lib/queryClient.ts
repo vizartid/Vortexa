@@ -22,9 +22,21 @@ export async function apiRequest(
     // Use Netlify Functions for API calls when in production
     const baseUrl = window.location.hostname === 'localhost' 
       ? 'http://localhost:5000' 
-      : window.location.origin;
+      : '';
     
-    const fullUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
+    // Convert /api/* to /.netlify/functions/* for production
+    let fullUrl;
+    if (window.location.hostname === 'localhost') {
+      fullUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
+    } else {
+      // In production, map /api/chat to /.netlify/functions/chat
+      if (url.startsWith('/api/')) {
+        const functionName = url.replace('/api/', '');
+        fullUrl = `/.netlify/functions/${functionName}`;
+      } else {
+        fullUrl = url;
+      }
+    }
     
     const res = await fetch(fullUrl, {
       method,
