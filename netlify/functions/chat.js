@@ -1,4 +1,3 @@
-
 export async function handler(event, context) {
   // Handle CORS for all requests
   const headers = {
@@ -13,26 +12,11 @@ export async function handler(event, context) {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ message: 'CORS preflight successful' }),
+      body: '',
     };
   }
 
-  // Handle GET request for testing
-  if (event.httpMethod === 'GET') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: 'Chat function is working!',
-        status: 'ok',
-        method: 'GET',
-        supportedMethods: ['POST'],
-        timestamp: new Date().toISOString()
-      }),
-    };
-  }
-
-  // Only allow POST requests for chat functionality
+  // Only allow POST requests for chat
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -40,7 +24,7 @@ export async function handler(event, context) {
       body: JSON.stringify({
         error: 'Method not allowed',
         message: `${event.httpMethod} method is not supported. Use POST instead.`,
-        allowedMethods: ['POST', 'GET', 'OPTIONS']
+        allowedMethods: ['POST']
       }),
     };
   }
