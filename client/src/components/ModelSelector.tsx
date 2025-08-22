@@ -24,19 +24,43 @@ interface ModelSelectorProps {
   onModelChange: (modelId: string) => void;
 }
 
+// Fallback models in case API is not available
+const fallbackModels: Model[] = [
+  {
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash',
+    description: 'Google\'s fast and efficient multimodal AI model optimized for speed and performance',
+    isPrimary: true
+  },
+  {
+    id: 'claude-3-haiku',
+    name: 'Claude 3 Haiku',
+    description: 'Anthropic\'s fast and lightweight AI model, great for quick responses',
+    isPrimary: false
+  }
+];
+
 export function ModelSelector({ selectedModel, onModelChange }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: modelsData, isLoading } = useQuery({
+  const { data: modelsData, isLoading, error } = useQuery({
     queryKey: ["/api/models"],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/models');
-      return response.json();
+      try {
+        const response = await apiRequest('GET', '/api/models');
+        return response.json();
+      } catch (error) {
+        console.log('API call not supported in serverless mode:', '/api/models');
+        // Return fallback data structure
+        return { success: true, models: fallbackModels };
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false, // Don't retry if it fails
   });
 
-  const models = modelsData?.models || [];
+  // Use fallback models if API fails or no data
+  const models = modelsData?.models || fallbackModels;
   const currentModel = models.find((model: Model) => model.id === selectedModel);
 
   // Set default model to primary model (Gemini) if not already selected
@@ -62,7 +86,8 @@ export function ModelSelector({ selectedModel, onModelChange }: ModelSelectorPro
     return model.name;
   };
 
-  if (isLoading) {
+  // Show loading only if we don't have fallback models
+  if (isLoading && models.length === 0) {
     return (
       <Button variant="outline" size="sm" disabled>
         <Bot className="w-4 h-4 mr-2" />

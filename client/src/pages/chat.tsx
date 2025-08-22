@@ -393,23 +393,25 @@ export default function Chat() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Model Selector */}
-            <ModelSelector 
-              selectedModel={selectedModel} 
-              onModelChange={setSelectedModel} 
-            />
-            
-            {currentConversationId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearConversation}
-                disabled={sendMessageMutation.isPending} // Disable if a message is being sent
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
-            )}
+            {/* Model Selector - always show */}
+            <div className="flex items-center gap-2">
+              <ModelSelector 
+                selectedModel={selectedModel} 
+                onModelChange={setSelectedModel} 
+              />
+              
+              {currentConversationId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearConversation}
+                  disabled={sendMessageMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
