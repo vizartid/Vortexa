@@ -6,11 +6,10 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MessageSquare, Trash2, Edit3, Menu, Settings, User, Bot } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Edit3, Menu, Bot } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
-import UserInfo from "@/components/UserInfo";
 
 interface Conversation {
   id: string;
@@ -77,9 +76,9 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
   };
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-slate-900/95 backdrop-blur-sm">
+    <div className="flex h-full flex-col bg-slate-900/95 backdrop-blur-sm rounded-lg">
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-slate-700/50">
         <div className="flex items-center space-x-3 mb-4">
           <img
             src={logoImage}
@@ -93,7 +92,7 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
             onNewConversation();
             if (isMobile) setSidebarOpen(false);
           }}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg"
           data-testid="button-new-conversation"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -102,8 +101,8 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
       </div>
 
       {/* Conversations List */}
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-1">
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-2">
           {isLoading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
@@ -119,8 +118,8 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
                   if (isMobile) setSidebarOpen(false);
                 }}
                 className={cn(
-                  "p-3 hover:bg-slate-800/70 rounded-lg cursor-pointer group transition-all duration-200",
-                  currentConversationId === conversation.id && "bg-slate-700/70 border-l-2 border-blue-500"
+                  "p-3 hover:bg-slate-800/70 rounded-lg cursor-pointer group transition-all duration-200 border border-slate-700/30",
+                  currentConversationId === conversation.id && "bg-slate-700/70 border-blue-500/50"
                 )}
                 data-testid={`conversation-item-${conversation.id}`}
               >
@@ -137,7 +136,7 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                      className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded"
                       onClick={(e) => handleDeleteConversation(e, conversation.id)}
                       data-testid={`button-delete-${conversation.id}`}
                     >
@@ -148,31 +147,16 @@ export function ChatSidebar({ currentConversationId, onConversationSelect, onNew
               </div>
             ))
           ) : (
-            <div className="text-center py-8 text-slate-400">
-              <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No conversations yet</p>
-              <p className="text-xs opacity-80">Start a new conversation to get started</p>
+            <div className="text-center py-12 text-slate-400">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm font-medium">No conversations yet</p>
+              <p className="text-xs opacity-80 mt-1">Start a new conversation to get started</p>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-slate-700">
-        <UserInfo />
-        <div className="flex items-center space-x-3 p-3 bg-slate-800/50 rounded-lg">
-          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white">User</p>
-            <p className="text-xs text-slate-400">Pro Plan</p>
-          </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700">
-            <Settings className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      
     </div>
   );
 
