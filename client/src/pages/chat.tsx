@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -87,11 +86,11 @@ export default function Chat() {
 
         if (!response.ok) {
           let errorMessage = `HTTP ${response.status}: Failed to send message`;
-          
+
           try {
             const errorText = await responseClone.text();
             console.error('Error response text:', errorText);
-            
+
             // Try to parse as JSON first
             try {
               const errorData = JSON.parse(errorText);
@@ -103,7 +102,7 @@ export default function Chat() {
           } catch (textError) {
             console.error('Could not read error response:', textError);
           }
-          
+
           throw new Error(errorMessage);
         }
 
@@ -129,22 +128,22 @@ export default function Chat() {
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
           console.error('Response text:', responseText);
-          
+
           // Check if response looks like HTML (common error response)
           if (responseText.trim().startsWith('<')) {
             throw new Error('Server returned HTML instead of JSON. Please check server logs.');
           }
-          
+
           throw new Error(`Invalid JSON response from server: ${responseText.substring(0, 100)}`);
         }
 
         console.log('Parsed API Response:', data);
-        
+
         // Validate response structure
         if (data.success === false) {
           throw new Error(data.message || data.error || 'Server returned error response');
         }
-        
+
         // Handle different response formats gracefully
         if (data.success && data.response) {
           // Netlify Function response format
@@ -168,11 +167,11 @@ export default function Chat() {
             }
           };
         }
-        
+
         return data;
       } catch (error) {
         console.error('Send message error:', error);
-        
+
         // Provide more helpful error messages
         if (error instanceof Error) {
           if (error.message.includes('fetch')) {
@@ -182,7 +181,7 @@ export default function Chat() {
           }
           throw error;
         }
-        
+
         throw new Error('Unknown error occurred while sending message');
       }
     },
@@ -400,8 +399,8 @@ export default function Chat() {
         {/* Messages */}
         <ScrollArea className="flex-1 p-4">
           <div className={`mx-auto w-full transition-all duration-300 ${
-            !isMobile 
-              ? 'max-w-none px-4' 
+            !isMobile
+              ? 'max-w-none px-4'
               : 'max-w-4xl'
           }`}>
             {isLoading ? (
@@ -437,8 +436,8 @@ export default function Chat() {
         {/* Input */}
         <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
           <div className={`mx-auto w-full transition-all duration-300 ${
-            !isMobile 
-              ? 'max-w-none px-4' 
+            !isMobile
+              ? 'max-w-none px-4'
               : 'max-w-4xl'
           }`}>
             <ChatInput

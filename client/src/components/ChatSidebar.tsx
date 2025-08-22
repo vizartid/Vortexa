@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -27,12 +26,12 @@ interface ChatSidebarProps {
   isLoadingConversations?: boolean;
 }
 
-export function ChatSidebar({ 
-  currentConversationId, 
-  onConversationSelect, 
+export function ChatSidebar({
+  currentConversationId,
+  onConversationSelect,
   onNewConversation,
   conversations = [],
-  isLoadingConversations = false 
+  isLoadingConversations = false
 }: ChatSidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
