@@ -78,7 +78,6 @@ For complete functionality, deploy the backend to a Node.js hosting service:
 ## Project Structure
 
 ```
-├── public/
 ├── client/                 # Frontend React application
 │   ├── src/
 │   │   ├── components/     # Reusable UI components

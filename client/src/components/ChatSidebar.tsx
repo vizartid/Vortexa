@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -7,10 +6,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MessageSquare, Trash2, Edit3, Menu, Bot } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Edit3, Menu, Settings, User, Bot } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
+import UserInfo from "@/components/UserInfo";
 
 interface Conversation {
   id: string;
@@ -23,21 +23,18 @@ interface ChatSidebarProps {
   currentConversationId?: string;
   onConversationSelect: (conversationId: string) => void;
   onNewConversation: () => void;
-  conversations?: Conversation[];
-  isLoadingConversations?: boolean;
 }
 
-export function ChatSidebar({ 
-  currentConversationId, 
-  onConversationSelect, 
-  onNewConversation,
-  conversations = [],
-  isLoadingConversations = false 
-}: ChatSidebarProps) {
+export function ChatSidebar({ currentConversationId, onConversationSelect, onNewConversation }: ChatSidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: conversationsData, isLoading } = useQuery({
+    queryKey: ["/api/conversations"],
+    select: (data: any) => data.conversations as Conversation[],
+  });
 
   const deleteConversationMutation = useMutation({
     mutationFn: async (conversationId: string) => {
@@ -80,109 +77,124 @@ export function ChatSidebar({
   };
 
   const SidebarContent = () => (
-    <div className="flex h-screen flex-col bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50">
+    <div className="flex h-full flex-col bg-slate-900/95 backdrop-blur-sm">
       {/* Header */}
-      <div className="p-4 border-b border-slate-700/50 flex-shrink-0">
+      <div className="p-4 border-b border-slate-700">
         <div className="flex items-center space-x-3 mb-4">
           <img
             src={logoImage}
             alt="Vortexa Logo"
-            className="w-8 h-8 object-contain flex-shrink-0"
+            className="w-8 h-8 object-contain"
           />
-          <h1 className="text-lg font-bold text-white truncate">Vortexa Chat</h1>
+          <h1 className="text-lg font-bold text-white">Vortexa Chat</h1>
         </div>
         <Button
           onClick={() => {
             onNewConversation();
             if (isMobile) setSidebarOpen(false);
           }}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
           data-testid="button-new-conversation"
         >
-          <Plus className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate">New Conversation</span>
+          <Plus className="w-4 h-4 mr-2" />
+          New Conversation
         </Button>
       </div>
 
       {/* Conversations List */}
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="p-4 space-y-2 min-h-full">
-            {isLoadingConversations ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-800/50 rounded-lg animate-pulse" />
-                ))}
-              </div>
-            ) : conversations && conversations.length > 0 ? (
-              conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  onClick={() => {
-                    onConversationSelect(conversation.id);
-                    if (isMobile) setSidebarOpen(false);
-                  }}
-                  className={cn(
-                    "group p-3 hover:bg-slate-800/70 rounded-lg cursor-pointer transition-all duration-200 border border-slate-700/30 min-h-[60px] flex flex-col justify-center",
-                    currentConversationId === conversation.id && "bg-slate-700/70 border-blue-500/50"
-                  )}
-                  data-testid={`conversation-item-${conversation.id}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate leading-5">
-                        {conversation.title}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1 truncate">
-                        {formatTimestamp(conversation.updatedAt)}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded"
-                        onClick={(e) => handleDeleteConversation(e, conversation.id)}
-                        data-testid={`button-delete-${conversation.id}`}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-1">
+          {isLoading ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-14 bg-slate-800/50 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : conversationsData && conversationsData.length > 0 ? (
+            conversationsData.map((conversation) => (
+              <div
+                key={conversation.id}
+                onClick={() => {
+                  onConversationSelect(conversation.id);
+                  if (isMobile) setSidebarOpen(false);
+                }}
+                className={cn(
+                  "p-3 hover:bg-slate-800/70 rounded-lg cursor-pointer group transition-all duration-200",
+                  currentConversationId === conversation.id && "bg-slate-700/70 border-l-2 border-blue-500"
+                )}
+                data-testid={`conversation-item-${conversation.id}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {conversation.title}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {formatTimestamp(conversation.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                      onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                      data-testid={`button-delete-${conversation.id}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="flex items-center justify-center min-h-[calc(100vh-120px)] text-slate-400 px-2">
-                <div className="text-center">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm font-medium mb-2">No conversations yet</p>
-                  <p className="text-xs opacity-80 leading-relaxed">Start a new conversation to get started</p>
-                </div>
               </div>
-            )}
+            ))
+          ) : (
+            <div className="text-center py-8 text-slate-400">
+              <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No conversations yet</p>
+              <p className="text-xs opacity-80">Start a new conversation to get started</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-slate-700">
+        <UserInfo />
+        <div className="flex items-center space-x-3 p-3 bg-slate-800/50 rounded-lg">
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <User className="w-4 h-4 text-white" />
           </div>
-        </ScrollArea>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white">User</p>
+            <p className="text-xs text-slate-400">Pro Plan</p>
+          </div>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700">
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
 
   if (isMobile) {
     return (
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="sm" data-testid="button-mobile-menu" className="fixed top-4 right-4 z-50 bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50">
-            <Menu className="w-5 h-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-80 max-w-[85vw]">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      <>
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" data-testid="button-mobile-menu">
+              <Menu className="w-5 h-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-80">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </>
     );
   }
 
   return (
-    <div className="w-80 h-screen border-r border-slate-700/50 bg-slate-900/95 backdrop-blur-sm">
+    <div className="hidden lg:flex lg:w-80 border-r border-border">
       <SidebarContent />
     </div>
   );
