@@ -46,11 +46,14 @@ export async function handler(event, context) {
   }
 
   try {
+    console.log('Chat function called with:', event.httpMethod, event.body);
+
     // Parse request body
     let requestBody;
     try {
       requestBody = JSON.parse(event.body || '{}');
     } catch (parseError) {
+      console.error('JSON parse error:', parseError);
       return {
         statusCode: 400,
         headers,
@@ -76,6 +79,7 @@ export async function handler(event, context) {
 
     const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) {
+      console.error('GOOGLE_API_KEY not found in environment');
       return {
         statusCode: 500,
         headers,
@@ -88,8 +92,11 @@ export async function handler(event, context) {
 
     // Call Gemini API with better error handling
     let response;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
     try {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      console.log('Calling Gemini API...');
+      response = await fetch(geminiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -190,10 +197,12 @@ export async function handler(event, context) {
     const promptTokens = Math.ceil(message.length / 4);
     const completionTokens = Math.ceil(cleanedText.length / 4);
 
-    // Generate conversation ID for this session (don't persist to database)
+    // Generate conversation ID for this session
     const currentConversationId = conversationId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Return simple response without database operations
+    console.log('Sending successful response');
+
+    // Return response in the format expected by frontend
     return {
       statusCode: 200,
       headers,
@@ -203,11 +212,13 @@ export async function handler(event, context) {
         conversationId: currentConversationId,
         response: cleanedText,
         userMessage: {
+          id: `user-${Date.now()}`,
           role: 'user',
           content: message.trim(),
           timestamp: new Date().toISOString()
         },
         assistantMessage: {
+          id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: cleanedText,
           timestamp: new Date().toISOString(),

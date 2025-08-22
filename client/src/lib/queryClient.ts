@@ -24,12 +24,8 @@ export async function apiRequest(
 
     let fullUrl;
     if (isLocalhost) {
-      // In development, for chat use Netlify Functions, others use Express
-      if (url.startsWith('/api/chat')) {
-        fullUrl = `${window.location.origin}/.netlify/functions/chat`;
-      } else {
-        fullUrl = `http://localhost:5000${url}`;
-      }
+      // In development, use Express server for all API calls
+      fullUrl = `http://localhost:5000${url}`;
     } else {
       // In production, use Netlify Functions
       if (url.startsWith('/api/chat')) {
