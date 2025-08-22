@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerVite } from "./vite";
+import { setupVite, serveStatic } from "./vite";
 import { setupRoutes } from "./routes";
 
 const app = express();
@@ -50,10 +50,29 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// Important: this comes after API routes but before error handling
-registerVite(app);
+// Function to register Vite middleware
+async function registerVite(app: express.Express) {
+  if (process.env.NODE_ENV === "production") {
+    serveStatic(app);
+  } else {
+    const server = app.listen(port, "0.0.0.0", () => {
+      console.log(`Server running on port ${port}`);
+    });
+    await setupVite(app, server);
+  }
+}
 
 const port = parseInt(process.env.PORT || "5000");
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on port ${port}`);
-});
+
+// Important: this comes after API routes but before error handling
+if (process.env.NODE_ENV === "production") {
+  serveStatic(app);
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on port ${port}`);
+  });
+} else {
+  const server = app.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on port ${port}`);
+  });
+  await setupVite(app, server);
+}
