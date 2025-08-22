@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -14,7 +15,6 @@ import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
-// Removed localStorage import
 
 export default function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,7 +26,6 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
-  // Removed localStorage functionality
 
   // Mock conversations data (database disabled)
   const conversationsData = { conversations: [] };
@@ -51,7 +50,6 @@ export default function Chat() {
     retry: false,
     staleTime: Infinity,
   });
-
 
   // For serverless mode, we'll manage messages in local state
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
@@ -84,22 +82,42 @@ export default function Chat() {
         const response = await apiRequest('POST', '/api/chat', payload);
 
         console.log('API Response status:', response.status);
+        console.log('API Response headers:', response.headers.get('content-type'));
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error Response:', errorText);
           let errorMessage = 'Failed to send message';
           try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.message || errorMessage;
-          } catch (e) {
-            errorMessage = `Server error (${response.status})`;
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (parseError) {
+            // If we can't parse JSON, try to get text
+            try {
+              const errorText = await response.text();
+              console.error('Non-JSON API Error Response:', errorText);
+              errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
+            } catch (textError) {
+              errorMessage = `Server error (${response.status})`;
+            }
           }
           throw new Error(errorMessage);
         }
 
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.warn('Response is not JSON:', contentType);
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          throw new Error('Server returned invalid response format');
+        }
+
         const data = await response.json();
         console.log('API Response data:', data);
+        
+        // Check if response indicates success
+        if (data.success === false) {
+          throw new Error(data.message || data.error || 'Request failed');
+        }
         
         // Handle different response formats
         if (data.success && data.response) {
@@ -249,107 +267,102 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Mobile Burger Menu di kanan atas */}
-      {isMobile && (
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
-          >
-            {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </Button>
-        </div>
-      )}
-
-      <div className="flex h-full w-full">
-        {/* Sidebar */}
+      {/* Desktop Sidebar - positioned absolute to allow chat to expand behind it */}
+      {!isMobile && (
         <div className={`
-          ${isMobile ? (
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          ) : (
-            isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
-          ${isMobile ? 'fixed' : 'relative'}
-          inset-y-0 left-0
-          ${isDesktopSidebarOpen && !isMobile ? 'w-80' : 'w-80'}
-          bg-slate-800/50
-          backdrop-blur-sm
-          border-r border-slate-700
+          ${isDesktopSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          fixed inset-y-0 left-0 w-80
           transition-all duration-300 ease-in-out
-          ${isMobile ? 'z-40' : 'z-10'}
+          z-10
         `}>
           <ChatSidebar
             currentConversationId={currentConversationId}
             onConversationSelect={handleSelectConversation}
             onNewConversation={handleNewConversation}
-            // In serverless mode, conversations might be managed differently (e.g., local storage, or simplified list)
-            // For now, using mock data or empty if no data fetched.
             conversations={conversationsData?.conversations || []}
             isLoadingConversations={isLoadingConversations}
           />
         </div>
+      )}
 
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              {/* Desktop Sidebar Toggle */}
-              {!isMobile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
-                  className="mr-2"
-                >
-                  {isDesktopSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-                </Button>
-              )}
+      {/* Mobile Sidebar */}
+      {isMobile && (
+        <ChatSidebar
+          currentConversationId={currentConversationId}
+          onConversationSelect={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          conversations={conversationsData?.conversations || []}
+          isLoadingConversations={isLoadingConversations}
+        />
+      )}
+
+      {/* Main chat area - takes full width, with padding when sidebar is open */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+        !isMobile && isDesktopSidebarOpen ? 'ml-80' : 'ml-0'
+      }`}>
+        {/* Header */}
+        <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            {/* Desktop Sidebar Toggle */}
+            {!isMobile && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setLocation("/")}
+                onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
                 className="mr-2"
               >
-                <ArrowLeft className="w-4 h-4" />
+                {isDesktopSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
               </Button>
-              <img
-                src={logoImage}
-                alt="Vortexa Logo"
-                className="w-6 h-6 object-contain"
-              />
-              <div>
-                <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
-                <p className="text-sm text-muted-foreground">
-                  AI-Powered Assistant
-                </p>
-              </div>
-            </div>
-
-            {currentConversationId && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearConversation}
-                  disabled={sendMessageMutation.isPending} // Disable if a message is being sent
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
-              </div>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="mr-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <img
+              src={logoImage}
+              alt="Vortexa Logo"
+              className="w-6 h-6 object-contain"
+            />
+            <div>
+              <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
+              <p className="text-sm text-muted-foreground">
+                AI-Powered Assistant
+              </p>
+            </div>
           </div>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
+          {currentConversationId && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearConversation}
+                disabled={sendMessageMutation.isPending} // Disable if a message is being sent
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Messages */}
+        <ScrollArea className="flex-1 p-4">
+          <div className={`mx-auto w-full transition-all duration-300 ${
+            !isMobile 
+              ? 'max-w-none px-4' 
+              : 'max-w-4xl'
+          }`}>
             {isLoading ? (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-full min-h-[60vh]">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : messagesData && messagesData.length > 0 ? (
-              <div className="space-y-4 max-w-4xl mx-auto">
+              <div className="space-y-4">
                 {messagesData.map((message) => (
                   <ChatMessage key={message.id} message={message} />
                 ))}
@@ -357,7 +370,7 @@ export default function Chat() {
                 <div ref={messagesEndRef} />
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center max-w-md mx-auto">
                   <img
                     src={logoImage}
@@ -371,17 +384,21 @@ export default function Chat() {
                 </div>
               </div>
             )}
-          </ScrollArea>
+          </div>
+        </ScrollArea>
 
-          {/* Input */}
-          <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-            <div className="max-w-4xl mx-auto">
-              <ChatInput
-                onSendMessage={handleSendMessage}
-                disabled={sendMessageMutation.isPending}
-                placeholder="Ketik pesan Anda..."
-              />
-            </div>
+        {/* Input */}
+        <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
+          <div className={`mx-auto w-full transition-all duration-300 ${
+            !isMobile 
+              ? 'max-w-none px-4' 
+              : 'max-w-4xl'
+          }`}>
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              disabled={sendMessageMutation.isPending}
+              placeholder="Ketik pesan Anda..."
+            />
           </div>
         </div>
       </div>
