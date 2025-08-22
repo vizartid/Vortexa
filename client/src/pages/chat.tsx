@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -14,7 +15,6 @@ import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
-// Removed localStorage import
 
 export default function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,7 +26,6 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
-  // Removed localStorage functionality
 
   // Mock conversations data (database disabled)
   const conversationsData = { conversations: [] };
@@ -51,7 +50,6 @@ export default function Chat() {
     retry: false,
     staleTime: Infinity,
   });
-
 
   // For serverless mode, we'll manage messages in local state
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
@@ -282,106 +280,105 @@ export default function Chat() {
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
         !isMobile && isDesktopSidebarOpen ? 'ml-80' : 'ml-0'
       }`}>
-          {/* Header */}
-          <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              {/* Desktop Sidebar Toggle */}
-              {!isMobile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
-                  className="mr-2"
-                >
-                  {isDesktopSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-                </Button>
-              )}
+        {/* Header */}
+        <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            {/* Desktop Sidebar Toggle */}
+            {!isMobile && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setLocation("/")}
+                onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
                 className="mr-2"
               >
-                <ArrowLeft className="w-4 h-4" />
+                {isDesktopSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
               </Button>
-              <img
-                src={logoImage}
-                alt="Vortexa Logo"
-                className="w-6 h-6 object-contain"
-              />
-              <div>
-                <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
-                <p className="text-sm text-muted-foreground">
-                  AI-Powered Assistant
-                </p>
-              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="mr-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <img
+              src={logoImage}
+              alt="Vortexa Logo"
+              className="w-6 h-6 object-contain"
+            />
+            <div>
+              <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
+              <p className="text-sm text-muted-foreground">
+                AI-Powered Assistant
+              </p>
             </div>
+          </div>
 
-            {currentConversationId && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearConversation}
-                  disabled={sendMessageMutation.isPending} // Disable if a message is being sent
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
+          {currentConversationId && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearConversation}
+                disabled={sendMessageMutation.isPending} // Disable if a message is being sent
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Messages */}
+        <ScrollArea className="flex-1 p-4">
+          <div className={`mx-auto w-full transition-all duration-300 ${
+            !isMobile 
+              ? 'max-w-none px-4' 
+              : 'max-w-4xl'
+          }`}>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full min-h-[60vh]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : messagesData && messagesData.length > 0 ? (
+              <div className="space-y-4">
+                {messagesData.map((message) => (
+                  <ChatMessage key={message.id} message={message} />
+                ))}
+                {isTyping && <TypingIndicator />}
+                <div ref={messagesEndRef} />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center max-w-md mx-auto">
+                  <img
+                    src={logoImage}
+                    alt="Vortexa Logo"
+                    className="w-16 h-16 mx-auto mb-6 opacity-80"
+                  />
+                  <h2 className="text-2xl font-semibold mb-3 text-foreground">Selamat Datang!</h2>
+                  <p className="text-muted-foreground text-lg leading-relaxed">
+                    Mulai percakapan dengan mengirim pesan di bawah
+                  </p>
+                </div>
               </div>
             )}
           </div>
+        </ScrollArea>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
-            <div className={`mx-auto w-full transition-all duration-300 ${
-              !isMobile 
-                ? 'max-w-none px-4' 
-                : 'max-w-4xl'
-            }`}>
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full min-h-[60vh]">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : messagesData && messagesData.length > 0 ? (
-                <div className="space-y-4">
-                  {messagesData.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
-                  ))}
-                  {isTyping && <TypingIndicator />}
-                  <div ref={messagesEndRef} />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center min-h-[60vh]">
-                  <div className="text-center max-w-md mx-auto">
-                    <img
-                      src={logoImage}
-                      alt="Vortexa Logo"
-                      className="w-16 h-16 mx-auto mb-6 opacity-80"
-                    />
-                    <h2 className="text-2xl font-semibold mb-3 text-foreground">Selamat Datang!</h2>
-                    <p className="text-muted-foreground text-lg leading-relaxed">
-                      Mulai percakapan dengan mengirim pesan di bawah
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Input */}
-          <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-            <div className={`mx-auto w-full transition-all duration-300 ${
-              !isMobile 
-                ? 'max-w-none px-4' 
-                : 'max-w-4xl'
-            }`}>
-              <ChatInput
-                onSendMessage={handleSendMessage}
-                disabled={sendMessageMutation.isPending}
-                placeholder="Ketik pesan Anda..."
-              />
-            </div>
+        {/* Input */}
+        <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
+          <div className={`mx-auto w-full transition-all duration-300 ${
+            !isMobile 
+              ? 'max-w-none px-4' 
+              : 'max-w-4xl'
+          }`}>
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              disabled={sendMessageMutation.isPending}
+              placeholder="Ketik pesan Anda..."
+            />
           </div>
         </div>
       </div>
