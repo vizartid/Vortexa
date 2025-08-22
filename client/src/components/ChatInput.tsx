@@ -124,7 +124,7 @@ export function ChatInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t bg-background p-4">
+    <form onSubmit={handleSubmit} className="bg-background">
       {/* Attachments Preview */}
       {attachments.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">

@@ -353,8 +353,10 @@ export default function Chat() {
         !isMobile && isDesktopSidebarOpen ? 'ml-80' : 'ml-0'
       }`}>
         {/* Header */}
-        <div className="border-b p-4 flex items-center justify-between bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
+        <div className={`border-b flex items-center justify-between bg-background/95 backdrop-blur-sm ${
+          isMobile ? 'p-3' : 'p-4'
+        }`}>
+          <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
             {/* Desktop Sidebar Toggle */}
             {!isMobile && (
               <Button
@@ -370,18 +372,18 @@ export default function Chat() {
               variant="ghost"
               size="sm"
               onClick={() => setLocation("/")}
-              className="mr-2"
+              className={isMobile ? "mr-1" : "mr-2"}
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <img
               src={logoImage}
               alt="Vortexa Logo"
-              className="w-6 h-6 object-contain"
+              className={`object-contain ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
             />
             <div>
-              <h1 className="font-semibold text-foreground">Vortexa Chat</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className={`font-semibold text-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>Vortexa Chat</h1>
+              <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 AI-Powered Assistant
               </p>
             </div>

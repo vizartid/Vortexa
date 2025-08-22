@@ -46,7 +46,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("flex items-start space-x-3 max-w-3xl", isUser && "flex-row-reverse space-x-reverse")}>
+      <div className={cn("flex items-start max-w-3xl", isUser ? "flex-row-reverse space-x-reverse space-x-2" : "space-x-2")}>
         <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
           {isUser ? (
             <User className="w-4 h-4 text-primary" />

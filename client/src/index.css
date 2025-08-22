@@ -156,7 +156,25 @@
     }
     
     .main-content-mobile {
-      padding: var(--mobile-padding);
+      padding: 0;
+      margin: 0;
+    }
+    
+    /* Mobile chat optimizations */
+    .chat-mobile {
+      padding: 0;
+      margin: 0;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+    }
+    
+    .chat-messages-mobile {
+      padding: 0.5rem;
+    }
+    
+    .chat-input-mobile {
+      padding: 0.5rem;
     }
   }
   
