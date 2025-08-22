@@ -1,125 +1,71 @@
-import { type User, type InsertUser, type Conversation, type InsertConversation, type Message, type InsertMessage } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import { conversations, messages, insertConversationSchema, insertMessageSchema, type Conversation, type Message } from '@shared/schema';
+import { eq, desc } from 'drizzle-orm';
 
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
-  getConversations(userId: string): Promise<Conversation[]>;
-  getConversation(id: string): Promise<Conversation | undefined>;
-  createConversation(conversation: InsertConversation): Promise<Conversation>;
-  updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined>;
-  deleteConversation(id: string): Promise<boolean>;
-  
-  getMessages(conversationId: string): Promise<Message[]>;
-  createMessage(message: InsertMessage): Promise<Message>;
-  deleteMessages(conversationId: string): Promise<boolean>;
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required. Please set up Neon database in Replit.");
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private conversations: Map<string, Conversation>;
-  private messages: Map<string, Message>;
+const sql = neon(process.env.DATABASE_URL);
+const db = drizzle(sql);
 
-  constructor() {
-    this.users = new Map();
-    this.conversations = new Map();
-    this.messages = new Map();
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
+export const storage = {
+  async createConversation(data: typeof insertConversationSchema._type): Promise<Conversation> {
+    const [conversation] = await db.insert(conversations).values(data).returning();
+    return conversation;
+  },
 
   async getConversations(userId: string): Promise<Conversation[]> {
-    return Array.from(this.conversations.values())
-      .filter(conv => conv.userId === userId)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }
+    return await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.userId, userId))
+      .orderBy(desc(conversations.updatedAt));
+  },
 
   async getConversation(id: string): Promise<Conversation | undefined> {
-    return this.conversations.get(id);
-  }
-
-  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
-    const id = randomUUID();
-    const now = new Date();
-    const conversation: Conversation = {
-      ...insertConversation,
-      id,
-      userId: insertConversation.userId || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.conversations.set(id, conversation);
+    const [conversation] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, id))
+      .limit(1);
     return conversation;
-  }
+  },
 
   async updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined> {
-    const conversation = this.conversations.get(id);
-    if (!conversation) return undefined;
-    
-    const updated: Conversation = {
-      ...conversation,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.conversations.set(id, updated);
+    const [updated] = await db
+      .update(conversations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(conversations.id, id))
+      .returning();
     return updated;
-  }
+  },
 
   async deleteConversation(id: string): Promise<boolean> {
-    const deleted = this.conversations.delete(id);
-    if (deleted) {
-      // Also delete all messages in this conversation
-      await this.deleteMessages(id);
-    }
-    return deleted;
-  }
+    // Delete messages first
+    await db.delete(messages).where(eq(messages.conversationId, id));
+
+    // Delete conversation
+    const result = await db.delete(conversations).where(eq(conversations.id, id));
+    return result.rowCount > 0;
+  },
+
+  async createMessage(data: typeof insertMessageSchema._type): Promise<Message> {
+    const [message] = await db.insert(messages).values(data).returning();
+    return message;
+  },
 
   async getMessages(conversationId: string): Promise<Message[]> {
-    return Array.from(this.messages.values())
-      .filter(msg => msg.conversationId === conversationId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }
-
-  async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    const id = randomUUID();
-    const message: Message = {
-      ...insertMessage,
-      id,
-      attachments: insertMessage.attachments || null,
-      metadata: insertMessage.metadata || null,
-      createdAt: new Date(),
-    };
-    this.messages.set(id, message);
-    return message;
-  }
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId))
+      .orderBy(messages.createdAt);
+  },
 
   async deleteMessages(conversationId: string): Promise<boolean> {
-    const messagesToDelete = Array.from(this.messages.entries())
-      .filter(([_, msg]) => msg.conversationId === conversationId);
-    
-    messagesToDelete.forEach(([id]) => {
-      this.messages.delete(id);
-    });
-    
-    return messagesToDelete.length > 0;
-  }
-}
-
-export const storage = new MemStorage();
+    const result = await db.delete(messages).where(eq(messages.conversationId, conversationId));
+    return result.rowCount > 0;
+  },
+};
