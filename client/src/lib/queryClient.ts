@@ -21,7 +21,7 @@ export async function apiRequest(
   try {
     // Check if we're in development (localhost) or production
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    
+
     let fullUrl;
     if (isLocalhost) {
       // In development, use the local Express server
@@ -40,7 +40,7 @@ export async function apiRequest(
         fullUrl = url;
       }
     }
-    
+
     const res = await fetch(fullUrl, {
       method,
       headers: data ? { "Content-Type": "application/json" } : {},

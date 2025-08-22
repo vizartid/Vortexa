@@ -95,7 +95,8 @@ export async function handler(event, context) {
         headers,
         body: JSON.stringify({
           error: 'Network error',
-          message: 'Failed to connect to Gemini API'
+          message: 'Failed to connect to Gemini API',
+          success: false
         }),
       };
     }
@@ -117,7 +118,8 @@ export async function handler(event, context) {
         headers,
         body: JSON.stringify({
           error: 'Gemini API failed',
-          message: errorMessage
+          message: errorMessage,
+          success: false
         }),
       };
     }
@@ -132,7 +134,8 @@ export async function handler(event, context) {
         headers,
         body: JSON.stringify({
           error: 'Invalid response format',
-          message: 'Gemini API returned invalid JSON'
+          message: 'Gemini API returned invalid JSON',
+          success: false
         }),
       };
     }
@@ -144,7 +147,8 @@ export async function handler(event, context) {
         headers,
         body: JSON.stringify({
           error: 'Invalid response from Gemini API',
-          message: 'No content received from AI'
+          message: 'No content received from AI',
+          success: false
         }),
       };
     }
@@ -208,7 +212,8 @@ export async function handler(event, context) {
       headers,
       body: JSON.stringify({
         error: 'Internal server error',
-        message: error.message || 'An unexpected error occurred'
+        message: error.message || 'An unexpected error occurred',
+        success: false
       }),
     };
   }
