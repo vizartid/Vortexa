@@ -1,5 +1,13 @@
 
 export async function handler(event, context) {
+  console.log('=== CHAT FUNCTION START ===');
+  console.log('Event:', {
+    httpMethod: event.httpMethod,
+    headers: event.headers,
+    body: event.body ? event.body.substring(0, 200) : null,
+    queryStringParameters: event.queryStringParameters
+  });
+
   // Always ensure JSON response headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -67,11 +75,19 @@ export async function handler(event, context) {
     }
 
     const apiKey = process.env.GOOGLE_API_KEY;
+    console.log('API Key check:', apiKey ? 'Found' : 'Not found');
+    console.log('Environment variables available:', Object.keys(process.env).filter(key => key.startsWith('GOOGLE')));
+    
     if (!apiKey) {
       console.error('GOOGLE_API_KEY not found in environment');
+      console.error('All env vars:', Object.keys(process.env));
       return jsonResponse(500, {
         error: 'Gemini API key not configured',
-        message: 'Please set GOOGLE_API_KEY in Netlify environment variables'
+        message: 'GOOGLE_API_KEY tidak ditemukan di environment variables Netlify',
+        debug: {
+          envVarsFound: Object.keys(process.env).length,
+          googleVars: Object.keys(process.env).filter(key => key.includes('GOOGLE'))
+        }
       });
     }
 
@@ -80,7 +96,17 @@ export async function handler(event, context) {
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     try {
-      console.log('Calling Gemini API...');
+      console.log('Calling Gemini API with URL:', geminiUrl);
+      console.log('Request payload:', JSON.stringify({
+        contents: [{
+          parts: [{ text: message.trim() }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1000,
+        }
+      }));
+      
       response = await fetch(geminiUrl, {
         method: 'POST',
         headers: {
@@ -100,11 +126,17 @@ export async function handler(event, context) {
       console.error('Network error calling Gemini API:', fetchError);
       return jsonResponse(500, {
         error: 'Network error',
-        message: 'Failed to connect to Gemini API',
-        success: false
+        message: 'Gagal terhubung ke Gemini API',
+        success: false,
+        debug: {
+          errorMessage: fetchError.message,
+          errorStack: fetchError.stack
+        }
       });
     }
 
+    console.log('Gemini API response status:', response.status, response.statusText);
+    
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Gemini API Error:', response.status, errorData);

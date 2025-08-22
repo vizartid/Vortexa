@@ -121,20 +121,26 @@ export default function Chat() {
           throw new Error('Server returned empty response');
         }
 
-        // Try to parse as JSON
+        // Parse response as JSON with better error handling
         let data;
         try {
           data = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.error('Response text:', responseText);
+          console.log('Parsed JSON response:', data);
+        } catch (jsonError) {
+          console.error('JSON parsing failed:', jsonError);
+          console.error('Response text that failed to parse:', responseText.substring(0, 500));
 
-          // Check if response looks like HTML (common error response)
-          if (responseText.trim().startsWith('<')) {
-            throw new Error('Server returned HTML instead of JSON. Please check server logs.');
+          // Check if response looks like HTML error page
+          if (responseText.toLowerCase().includes('<!doctype') || responseText.toLowerCase().includes('<html')) {
+            throw new Error('Server mengembalikan halaman HTML error, bukan JSON. Silakan cek Netlify Function logs.');
           }
 
-          throw new Error(`Invalid JSON response from server: ${responseText.substring(0, 100)}`);
+          // Check if it's a function error
+          if (responseText.includes('Function invocation failed') || responseText.includes('Runtime exited')) {
+            throw new Error('Netlify Function error. Silakan cek environment variables dan function logs.');
+          }
+
+          throw new Error(`Format response tidak valid: ${responseText.substring(0, 200)}...`);
         }
 
         console.log('Parsed API Response:', data);
