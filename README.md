@@ -24,7 +24,7 @@ An intelligent AI chatbot application built with React, Express, and Google Gemi
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 20+ 
 - Google API Key for Gemini AI
 
 ### Installation
@@ -99,14 +99,3 @@ For complete functionality, deploy the backend to a Node.js hosting service:
 - `POST /api/chat` - Send message and get AI response
 - `POST /api/conversations` - Create new conversation
 - `DELETE /api/conversations/:id` - Delete conversation
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details
