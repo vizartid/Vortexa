@@ -438,8 +438,8 @@ export default function Chat() {
               ? 'max-w-none px-4'
               : 'max-w-4xl'
           }`}>
-            {/* Model Selector above input */}
-            <div className="mb-3 flex justify-center">
+            {/* Model Selector positioned at left above input line */}
+            <div className="mb-2 flex justify-start">
               <ModelSelector 
                 selectedModel={selectedModel} 
                 onModelChange={setSelectedModel}

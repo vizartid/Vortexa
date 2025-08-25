@@ -39,19 +39,19 @@ export function ModelSelector({ selectedModel = "gemini-1.5-flash", onModelChang
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <Bot className="w-4 h-4 text-muted-foreground" />
+      <Bot className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       <Select value={selectedModel} onValueChange={handleModelChange}>
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Select AI Model" />
+        <SelectTrigger className="w-[220px] min-w-[220px]">
+          <SelectValue placeholder="Select AI Model" className="truncate" />
         </SelectTrigger>
         <SelectContent>
           {models.map((model) => (
             <SelectItem key={model.id} value={model.id}>
-              <div className="flex flex-col">
-                <span className="font-medium">
+              <div className="flex flex-col w-full">
+                <span className="font-medium text-sm truncate">
                   {model.name} {model.isPrimary && "(Primary)"}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground truncate">
                   {model.description}
                 </span>
               </div>
