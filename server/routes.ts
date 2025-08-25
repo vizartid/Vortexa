@@ -13,6 +13,7 @@ const sendMessageSchema = z.object({
     conversationId: z.string().optional(),
     message: z.string().min(1),
     userId: z.string().optional().nullable(),
+    model: z.string().optional().default("gemini-1.5-flash"),
     attachments: z.array(z.object({
       filename: z.string(),
       mimeType: z.string(),
@@ -51,7 +52,20 @@ export function registerRoutes(app: Express): void {
         {
           id: "gemini-1.5-flash",
           name: "Google Gemini 1.5 Flash",
-          description: "Fast and efficient model untuk chat dan text generation"
+          description: "Fast and efficient model untuk chat dan text generation (Primary)",
+          isPrimary: true
+        },
+        {
+          id: "claude-3-haiku",
+          name: "Claude 3 Haiku",
+          description: "Anthropic's fast and intelligent model",
+          isPrimary: false
+        },
+        {
+          id: "glm-4-flash",
+          name: "GLM-4.5 Flash",
+          description: "Zhipu AI's efficient language model",
+          isPrimary: false
         }
       ];
       res.json({ models });
@@ -131,7 +145,7 @@ export function registerRoutes(app: Express): void {
     try {
       // Parse form data and files
       const validatedData = sendMessageSchema.parse(req.body);
-      const { conversationId, message, userId } = validatedData;
+      const { conversationId, message, userId, model } = validatedData;
       const files = req.files as Express.Multer.File[];
 
       let currentConversationId = conversationId;
@@ -169,16 +183,38 @@ export function registerRoutes(app: Express): void {
       // Get conversation history for context
       const messages = await storage.getMessages(currentConversationId);
 
-      // Import Gemini service
-      const { createGeminiChatCompletion } = await import("./services/gemini");
-
-      // Generate AI response using Gemini
-      const aiResponse = await createGeminiChatCompletion({
+      // Generate AI response based on selected model
+      let aiResponse;
+      const requestOptions = {
         messages: messages,
-        model: "gemini-1.5-flash",
         maxTokens: 1000,
         temperature: 0.7,
-      });
+      };
+
+      try {
+        switch (model) {
+          case "claude-3-haiku":
+            const { createClaudeChatCompletion } = await import("./services/claude");
+            aiResponse = await createClaudeChatCompletion(requestOptions);
+            break;
+          
+          case "glm-4-flash":
+            const { createGLMChatCompletion } = await import("./services/glm");
+            aiResponse = await createGLMChatCompletion(requestOptions);
+            break;
+          
+          case "gemini-1.5-flash":
+          default:
+            const { createGeminiChatCompletion } = await import("./services/gemini");
+            aiResponse = await createGeminiChatCompletion(requestOptions);
+            break;
+        }
+      } catch (modelError) {
+        console.error(`Error with ${model}, falling back to Gemini:`, modelError);
+        // Fallback to Gemini if the selected model fails
+        const { createGeminiChatCompletion } = await import("./services/gemini");
+        aiResponse = await createGeminiChatCompletion(requestOptions);
+      }
 
       // Save AI response
       const assistantMessage = await storage.createMessage({

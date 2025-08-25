@@ -6,6 +6,7 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
+import { ModelSelector } from "../components/ModelSelector";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +34,7 @@ export default function Chat() {
   // Welcome message for users
   useEffect(() => {
     toast({
-      title: "Selamat datang di Vortexa!",
+      title: "Selamat Datang di Vortexa!",
       description: "Silakan mulai percakapan dengan AI assistant",
       duration: 3000,
     });
@@ -389,8 +390,11 @@ export default function Chat() {
             </div>
           </div>
 
-          {currentConversationId && (
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Model Selector */}
+            <ModelSelector />
+
+            {currentConversationId && (
               <Button
                 variant="outline"
                 size="sm"
@@ -400,8 +404,8 @@ export default function Chat() {
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Messages */}
