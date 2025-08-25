@@ -1,4 +1,4 @@
-#Vortexa - AI-Powered Chat Assistant
+# Vortexa - AI-Powered Chat Assistant
 
 An intelligent AI chatbot assistant with multi-model support, built using React, TypeScript, and various AI providers.
 
