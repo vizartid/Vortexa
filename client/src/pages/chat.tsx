@@ -6,7 +6,6 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
-import { ModelSelector } from "@/components/ModelSelector";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +20,6 @@ export default function Chat() {
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>();
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-1.5-flash");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -69,15 +67,14 @@ export default function Chat() {
       attachments: FileAttachment[];
       conversationId?: string;
     }) => {
-      console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length, model: selectedModel });
+      console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
 
       // Prepare JSON payload
       const payload = {
         message: message.trim(),
         userId: 'default-user',
         conversationId,
-        attachments,
-        model: selectedModel
+        attachments
       };
 
       try {
@@ -392,27 +389,19 @@ export default function Chat() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Model Selector - always show */}
+          {currentConversationId && (
             <div className="flex items-center gap-2">
-              <ModelSelector 
-                selectedModel={selectedModel} 
-                onModelChange={setSelectedModel} 
-              />
-              
-              {currentConversationId && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearConversation}
-                  disabled={sendMessageMutation.isPending}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearConversation}
+                disabled={sendMessageMutation.isPending} // Disable if a message is being sent
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Messages */}
