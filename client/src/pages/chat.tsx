@@ -11,16 +11,16 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bot, Trash2, ArrowLeft, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Bot, Trash2, ArrowLeft, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Message, FileAttachment } from "@shared/schema";
 import { Navigation } from "@/components/Navigation";
 import logoImage from "@assets/Logo-vortexa-white.png?url";
 
 export default function Chat() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>();
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -338,17 +338,6 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Mobile Sidebar */}
-      {isMobile && (
-        <ChatSidebar
-          currentConversationId={currentConversationId}
-          onConversationSelect={handleSelectConversation}
-          onNewConversation={handleNewConversation}
-          conversations={conversationsData?.conversations || []}
-          isLoadingConversations={isLoadingConversations}
-        />
-      )}
-
       {/* Main chat area - takes full width, with padding when sidebar is open */}
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
         !isMobile && isDesktopSidebarOpen ? 'ml-80' : 'ml-0'
@@ -391,9 +380,6 @@ export default function Chat() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Model Selector */}
-            <ModelSelector />
-
             {currentConversationId && (
               <Button
                 variant="outline"
@@ -452,6 +438,13 @@ export default function Chat() {
               ? 'max-w-none px-4'
               : 'max-w-4xl'
           }`}>
+            {/* Model Selector above input */}
+            <div className="mb-3 flex justify-center">
+              <ModelSelector 
+                selectedModel={selectedModel} 
+                onModelChange={setSelectedModel}
+              />
+            </div>
             <ChatInput
               onSendMessage={handleSendMessage}
               disabled={sendMessageMutation.isPending}

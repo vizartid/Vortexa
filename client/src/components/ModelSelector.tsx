@@ -4,8 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Bot } from 'lucide-react';
 
 interface ModelSelectorProps {
-  selectedModel: string;
-  onModelChange: (model: string) => void;
+  selectedModel?: string;
+  onModelChange?: (model: string) => void;
   className?: string;
 }
 
@@ -30,12 +30,18 @@ const models = [
   }
 ];
 
-export function ModelSelector({ selectedModel, onModelChange, className = "" }: ModelSelectorProps) {
+export function ModelSelector({ selectedModel = "gemini-1.5-flash", onModelChange, className = "" }: ModelSelectorProps) {
+  const handleModelChange = (value: string) => {
+    if (onModelChange) {
+      onModelChange(value);
+    }
+  };
+
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <Bot className="w-4 h-4 text-muted-foreground" />
-      <Select value={selectedModel} onValueChange={onModelChange}>
-        <SelectTrigger className="w-[180px]">
+      <Select value={selectedModel} onValueChange={handleModelChange}>
+        <SelectTrigger className="w-[200px]">
           <SelectValue placeholder="Select AI Model" />
         </SelectTrigger>
         <SelectContent>
