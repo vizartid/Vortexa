@@ -62,11 +62,13 @@ export default function Chat() {
     mutationFn: async ({
       message,
       attachments,
-      conversationId
+      conversationId,
+      model
     }: {
       message: string;
       attachments: FileAttachment[];
       conversationId?: string;
+      model?: string;
     }) => {
       console.log('Sending message:', { message, conversationId, attachmentsCount: attachments.length });
 
@@ -75,7 +77,8 @@ export default function Chat() {
         message: message.trim(),
         userId: 'default-user',
         conversationId,
-        attachments
+        attachments,
+        model: model || 'gemini-1.5-flash'
       };
 
       try {
@@ -278,6 +281,7 @@ export default function Chat() {
       message,
       attachments,
       conversationId: currentConversationId,
+      model: selectedModel,
     });
   };
 

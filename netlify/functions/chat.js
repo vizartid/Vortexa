@@ -1,4 +1,3 @@
-
 export async function handler(event, context) {
   console.log('=== CHAT FUNCTION START ===');
   console.log('Event:', {
@@ -76,7 +75,7 @@ export async function handler(event, context) {
 
     // Check for required API keys based on model
     let response, data, rawText, modelName;
-    
+
     switch (model) {
       case 'claude-3-haiku':
         const claudeApiKey = process.env.ANTHROPIC_API_KEY;
@@ -86,7 +85,7 @@ export async function handler(event, context) {
             message: 'ANTHROPIC_API_KEY tidak ditemukan di environment variables Netlify'
           });
         }
-        
+
         try {
           response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
@@ -102,11 +101,11 @@ export async function handler(event, context) {
               messages: [{ role: 'user', content: message.trim() }]
             })
           });
-          
+
           if (!response.ok) {
             throw new Error(`Claude API error: ${response.status}`);
           }
-          
+
           data = await response.json();
           rawText = data.content[0].text;
           modelName = 'claude-3-haiku-20240307';
@@ -116,7 +115,7 @@ export async function handler(event, context) {
           return await callGeminiAPI(message);
         }
         break;
-        
+
       case 'glm-4-flash':
         const glmApiKey = process.env.GLM_API_KEY;
         if (!glmApiKey) {
@@ -125,7 +124,7 @@ export async function handler(event, context) {
             message: 'GLM_API_KEY tidak ditemukan di environment variables Netlify'
           });
         }
-        
+
         try {
           response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
             method: 'POST',
@@ -140,11 +139,11 @@ export async function handler(event, context) {
               temperature: 0.7
             })
           });
-          
+
           if (!response.ok) {
             throw new Error(`GLM API error: ${response.status}`);
           }
-          
+
           data = await response.json();
           rawText = data.choices[0].message.content;
           modelName = 'glm-4-flash';
@@ -154,16 +153,16 @@ export async function handler(event, context) {
           return await callGeminiAPI(message);
         }
         break;
-        
+
       case 'gemini-1.5-flash':
       default:
         return await callGeminiAPI(message);
     }
-    
+
     async function callGeminiAPI(messageText) {
       const apiKey = process.env.GOOGLE_API_KEY;
       console.log('API Key check:', apiKey ? 'Found' : 'Not found');
-      
+
       if (!apiKey) {
         console.error('GOOGLE_API_KEY not found in environment');
         return jsonResponse(500, {
@@ -175,10 +174,10 @@ export async function handler(event, context) {
     // Call Gemini API with better error handling
       let response;
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      
+
       try {
         console.log('Calling Gemini API with URL:', geminiUrl);
-        
+
         response = await fetch(geminiUrl, {
           method: 'POST',
           headers: {
@@ -204,7 +203,7 @@ export async function handler(event, context) {
       }
 
       console.log('Gemini API response status:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorData = await response.text();
         console.error('Gemini API Error:', response.status, errorData);
@@ -240,7 +239,7 @@ export async function handler(event, context) {
       modelName = 'gemini-1.5-flash';
       return processResponse(rawText, modelName, messageText);
     }
-    
+
     function processResponse(rawText, modelName, originalMessage) {
 
     // Clean markdown formatting
@@ -293,7 +292,7 @@ export async function handler(event, context) {
         }
       });
     }
-    
+
     // Process the response for non-Gemini models
     return processResponse(rawText, modelName, message);
 
