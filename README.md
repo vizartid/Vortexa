@@ -1,101 +1,202 @@
 # Vortexa - AI-Powered Chat Assistant
 
-An intelligent AI chatbot application built with React, Express, and Google Gemini AI.
+Asisten chatbot AI yang cerdas dengan dukungan multi-model, dibangun menggunakan React, TypeScript, dan berbagai AI provider.
 
-## Features
+## 🚀 Fitur
 
-- 🤖 AI-powered conversations using Google Gemini
-- 💬 Real-time chat interface
-- 📁 File upload support (images, documents)
-- 💾 Conversation history management
-- 📱 Responsive design for mobile and desktop
-- 🎨 Modern UI with Tailwind CSS and shadcn/ui
+- 🤖 **Multi-Model AI Support**: Dukungan untuk Gemini 1.5 Flash, Claude Haiku, dan GLM-4.5 Flash
+- 💬 **Real-time Chat Interface**: Antarmuka chat yang responsif dan modern
+- 📱 **Responsive Design**: Dioptimalkan untuk desktop dan mobile
+- 🎨 **Modern UI**: Menggunakan Tailwind CSS dengan shadcn/ui components
+- 🔄 **Model Switching**: Dapat beralih antar model AI secara real-time
+- 💾 **Conversation Management**: Manajemen riwayat percakapan
+- ⚡ **Serverless Deployment**: Deploy mudah ke Netlify
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Frontend**: React, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Express.js, Node.js
-- **AI**: Google Gemini API
-- **Storage**: In-memory storage (development)
+- **Frontend**: React 18, TypeScript, Tailwind CSS, shadcn/ui
+- **AI Models**: 
+  - Google Gemini 1.5 Flash
+  - Anthropic Claude Haiku
+  - Zhipu GLM-4.5 Flash
 - **Build Tool**: Vite
-- **Deployment**: Netlify (frontend), separate hosting needed for backend
+- **Deployment**: Netlify Functions (Serverless)
+- **Styling**: Tailwind CSS dengan custom animations
 
-## Getting Started
+## 📋 Prerequisites
 
-### Prerequisites
+- Node.js 20+
+- API Keys untuk AI models:
+  - Google API Key (untuk Gemini)
+  - Anthropic API Key (untuk Claude)
+  - Zhipu AI API Key (untuk GLM)
 
-- Node.js 20+ 
-- Google API Key for Gemini AI
+## 🚀 Getting Started
 
-### Installation
+### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd vortexa
+```
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Set Environment Variables
+Buat file `.env` di root directory:
+```bash
+# Required - Google Gemini API
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Optional - Anthropic Claude API
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Optional - Zhipu GLM API
+ZHIPUAI_API_KEY=your_zhipu_api_key_here
+```
+
+### 4. Development
+```bash
+npm run dev
+```
+
+Aplikasi akan berjalan di [http://localhost:5000](http://localhost:5000)
+
+## 🌐 Deployment
+
+### Netlify Deployment
+
+1. **Connect Repository**: Hubungkan repository ke Netlify
+2. **Build Settings**:
+   - Build command: `npm run build:netlify`
+   - Publish directory: `dist/public`
+3. **Environment Variables**: Set API keys di Netlify dashboard:
    ```
-
-3. Set up environment variables:
-   ```bash
-   # Create a .env file in the root directory
-   GOOGLE_API_KEY=your_google_api_key_here
+   GOOGLE_API_KEY=your_key
+   ANTHROPIC_API_KEY=your_key (optional)
+   ZHIPUAI_API_KEY=your_key (optional)
    ```
+4. **Deploy**: Deploy otomatis setiap push ke main branch
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+### Manual Build
+```bash
+npm run build:netlify
+```
 
-5. Open [http://localhost:5000](http://localhost:5000) in your browser
+## 🤖 Supported AI Models
 
-## Deployment
+### Gemini 1.5 Flash (Default)
+- **Provider**: Google AI
+- **Features**: Fast responses, multimodal support
+- **Required**: `GOOGLE_API_KEY`
 
-### Netlify (Frontend Only)
+### Claude Haiku
+- **Provider**: Anthropic
+- **Features**: High-quality reasoning, creative writing
+- **Required**: `ANTHROPIC_API_KEY`
 
-This project is configured for easy deployment to Netlify:
+### GLM-4.5 Flash
+- **Provider**: Zhipu AI
+- **Features**: Multilingual support, competitive performance
+- **Required**: `ZHIPUAI_API_KEY`
 
-1. Connect your repository to Netlify
-2. Set build command: `npm run build:netlify`
-3. Set publish directory: `dist/public`
-4. Deploy!
-
-**Note**: The Netlify deployment only includes the frontend. For full functionality including AI chat, you'll need to deploy the backend separately to a service like Railway, Render, or Vercel.
-
-### Full Stack Deployment
-
-For complete functionality, deploy the backend to a Node.js hosting service:
-
-1. **Backend**: Deploy to Railway, Render, or similar
-2. **Frontend**: Update API endpoints to point to your backend URL
-3. **Environment Variables**: Set `GOOGLE_API_KEY` in your backend hosting service
-
-## Environment Variables
-
-- `GOOGLE_API_KEY`: Your Google Gemini API key
-- `PORT`: Server port (default: 5000)
-- `NODE_ENV`: Environment mode (development/production)
-
-## Project Structure
+## 📁 Project Structure
 
 ```
-├── public/
+vortexa/
 ├── client/                 # Frontend React application
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
+│   │   │   ├── ui/         # shadcn/ui components
+│   │   │   ├── ChatInput.tsx
+│   │   │   ├── ChatMessage.tsx
+│   │   │   ├── ModelSelector.tsx
+│   │   │   └── ...
 │   │   ├── pages/          # Page components
+│   │   │   ├── chat.tsx
+│   │   │   ├── landing.tsx
+│   │   │   └── not-found.tsx
+│   │   ├── hooks/          # Custom React hooks
 │   │   ├── lib/            # Utility functions
-│   │   └── hooks/          # Custom React hooks
-├── server/                 # Backend Express application
-│   ├── routes.ts           # API routes
-│   ├── services/           # External service integrations
-│   └── storage.ts          # Data storage layer
+│   │   └── App.tsx
+│   └── index.html
+├── netlify/
+│   └── functions/          # Serverless functions
+│       ├── chat.js         # Main chat API
+│       └── api.js          # Additional APIs
+├── server/                 # Backend services (dev only)
+│   ├── services/           # AI service integrations
+│   │   ├── gemini.ts
+│   │   ├── claude.ts
+│   │   └── glm.ts
+│   └── ...
 ├── shared/                 # Shared types and schemas
-└── netlify/               # Netlify deployment configuration
+└── attached_assets/        # Static assets
 ```
 
-## API Endpoints
+## 🔧 Configuration
 
-- `GET /api/conversations` - Get user conversations
-- `POST /api/chat` - Send message and get AI response
-- `POST /api/conversations` - Create new conversation
-- `DELETE /api/conversations/:id` - Delete conversation
+### Model Configuration
+Models dapat dikonfigurasi di `client/src/components/ModelSelector.tsx`:
+
+```typescript
+const models = [
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google' },
+  { id: 'claude-3-haiku', name: 'Claude Haiku', provider: 'Anthropic' },
+  { id: 'glm-4.5-flash', name: 'GLM-4.5 Flash', provider: 'Zhipu AI' }
+];
+```
+
+### API Endpoints
+- `POST /.netlify/functions/chat` - Send message dan dapatkan AI response
+- `GET /.netlify/functions/api` - Additional API endpoints
+
+## 🎨 Customization
+
+### Styling
+- File utama: `client/src/index.css`
+- Tema dapat diubah di `tailwind.config.ts`
+- Custom components di `client/src/components/ui/`
+
+### Adding New AI Models
+1. Buat service baru di `server/services/`
+2. Update `netlify/functions/chat.js`
+3. Tambahkan model ke `ModelSelector.tsx`
+
+## 🔐 Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GOOGLE_API_KEY` | ✅ | Google Gemini API key |
+| `ANTHROPIC_API_KEY` | ✅ | Anthropic Claude API key |
+| `ZHIPUAI_API_KEY` | ✅ | Zhipu GLM API key |
+
+## 📝 Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production with backend
+- `npm run build:netlify` - Build for Netlify deployment
+- `npm run start` - Start production server
+- `npm run check` - TypeScript type checking
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Buat feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push ke branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 🙏 Acknowledgments
+
+- [Google Gemini](https://ai.google.dev/) untuk AI capabilities
+- [Anthropic Claude](https://www.anthropic.com/) untuk advanced reasoning
+- [Zhipu AI](https://www.zhipuai.cn/) untuk multilingual support
+- [shadcn/ui](https://ui.shadcn.com/) untuk UI components
+- [Tailwind CSS](https://tailwindcss.com/) untuk styling system
+
+---
+
+Dibuat oleh Muhammad Yusuf Aditiya 
