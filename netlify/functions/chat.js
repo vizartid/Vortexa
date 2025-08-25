@@ -129,7 +129,7 @@ export async function handler(event, context) {
           });
         }
 
-      case 'glm-4-flash':
+      case 'glm-4.5-flash':
         // Gunakan ZHIPUAI_API_KEY sesuai dengan yang ada di Netlify
         const glmApiKey = process.env.ZHIPUAI_API_KEY;
         console.log('GLM API Key check:', glmApiKey ? 'Found' : 'Not found');
