@@ -1,0 +1,249 @@
+@import url('https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;600;700&family=Roboto:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(222, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(217, 91%, 32%);
+  --primary-foreground: hsl(222, 84%, 4.9%);
+  --secondary: hsl(217, 91%, 45%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217, 32%, 17%);
+  --muted-foreground: hsl(215, 20%, 85%);
+  --accent: hsl(217, 91%, 69%);
+  --accent-foreground: hsl(222, 84%, 4.9%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217, 32%, 17%);
+  --input: hsl(217, 32%, 17%);
+  --ring: hsl(217, 91%, 69%);
+  --chart-1: hsl(217, 91%, 32%);
+  --chart-2: hsl(160, 60%, 45%);
+  --chart-3: hsl(30, 80%, 55%);
+  --chart-4: hsl(280, 65%, 60%);
+  --chart-5: hsl(340, 75%, 55%);
+  --sidebar: hsl(222, 84%, 4.9%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(217, 91%, 32%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(217, 32%, 17%);
+  --sidebar-accent-foreground: hsl(217, 91%, 69%);
+  --sidebar-border: hsl(217, 32%, 17%);
+  --sidebar-ring: hsl(217, 91%, 69%);
+  --chat-bubble: hsl(215, 25%, 35%);
+  --font-sans: 'Tomorrow', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+  
+  /* Mobile-responsive variables */
+  --mobile-sidebar-width: 280px;
+  --touch-target-min: 44px;
+  --mobile-padding: 16px;
+}
+
+.dark {
+  --background: hsl(222, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(217, 91%, 32%);
+  --primary-foreground: hsl(222, 84%, 4.9%);
+  --secondary: hsl(217, 91%, 45%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217, 32%, 17%);
+  --muted-foreground: hsl(215, 20%, 85%);
+  --accent: hsl(217, 91%, 69%);
+  --accent-foreground: hsl(222, 84%, 4.9%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217, 32%, 17%);
+  --input: hsl(217, 32%, 17%);
+  --ring: hsl(217, 91%, 69%);
+  --chart-1: hsl(217, 91%, 32%);
+  --chart-2: hsl(160, 60%, 45%);
+  --chart-3: hsl(30, 80%, 55%);
+  --chart-4: hsl(280, 65%, 60%);
+  --chart-5: hsl(340, 75%, 55%);
+  --sidebar: hsl(222, 84%, 4.9%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(217, 91%, 32%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(217, 32%, 17%);
+  --sidebar-accent-foreground: hsl(217, 91%, 69%);
+  --sidebar-border: hsl(217, 32%, 17%);
+  --sidebar-ring: hsl(217, 91%, 69%);
+  --chat-bubble: hsl(215, 25%, 35%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Tomorrow', 'Roboto', sans-serif;
+  }
+  
+  /* Font untuk tombol CTA */
+  .cta-button {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+  }
+  
+  /* Font untuk chat messages */
+  .font-roboto {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+
+  /* Hilangkan scroll indicator di semua browser */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Firefox */
+  html {
+    scrollbar-width: none;
+  }
+  
+  /* IE dan Edge */
+  body {
+    -ms-overflow-style: none;
+  }
+}
+
+@layer utilities {
+  .chat-bubble {
+    background-color: var(--chat-bubble);
+  }
+  
+  /* Mobile responsive touch targets */
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+  
+  /* Mobile sidebar overlay */
+  @media (max-width: 767px) {
+    .sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+    }
+    
+    .sidebar-mobile {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--mobile-sidebar-width);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease-in-out;
+      z-index: 50;
+    }
+    
+    .sidebar-mobile.open {
+      transform: translateX(0);
+    }
+    
+    .main-content-mobile {
+      padding: 0;
+      margin: 0;
+    }
+    
+    /* Mobile chat optimizations */
+    .chat-mobile {
+      padding: 0;
+      margin: 0;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+    }
+    
+    .chat-messages-mobile {
+      padding: 0.5rem;
+    }
+    
+    .chat-input-mobile {
+      padding: 0.5rem;
+    }
+  }
+  
+  /* Improved contrast for sidebar text */
+  .sidebar-text {
+    color: hsl(var(--sidebar-foreground));
+    font-weight: 500;
+  }
+  
+  .sidebar-text-muted {
+    color: hsl(var(--muted-foreground));
+    font-weight: 400;
+  }
+  
+  /* Enhanced chat bubble styling */
+  .message-user {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  
+  .message-assistant {
+    background-color: hsl(var(--chat-bubble));
+    color: hsl(var(--foreground));
+  }
+  
+  /* Responsive chat layout */
+  .chat-container {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .chat-content {
+    transition: max-width 0.3s ease-in-out;
+  }
+  
+  /* Improved responsive breakpoints */
+  @media (min-width: 768px) {
+    .chat-content-wide {
+      max-width: 768px;
+    }
+    
+    .chat-content-narrow {
+      max-width: 640px;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .chat-content-wide {
+      max-width: 896px;
+    }
+    
+    .chat-content-narrow {
+      max-width: 768px;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .chat-content-wide {
+      max-width: 1024px;
+    }
+    
+    .chat-content-narrow {
+      max-width: 896px;
+    }
+  }
+}
