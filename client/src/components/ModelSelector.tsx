@@ -24,8 +24,8 @@ const models = [
   },
   {
     id: "glm-4-flash",
-    name: "GLM-4.5 Flash", 
-    description: "Zhipu AI model (ZHIPUAI_API_KEY)",
+    name: "GLM-4 Flash", 
+    description: "Zhipu AI fast model",
     isPrimary: false
   }
 ];

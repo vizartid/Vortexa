@@ -153,7 +153,8 @@ export async function handler(event, context) {
               model: 'glm-4-flash',
               messages: [{ role: 'user', content: message.trim() }],
               max_tokens: 1000,
-              temperature: 0.7
+              temperature: 0.7,
+              stream: false
             })
           });
 
