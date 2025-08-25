@@ -66,6 +66,8 @@ export async function handler(event, context) {
 
     const { message, conversationId, userId, attachments, model = 'gemini-1.5-flash' } = requestBody;
 
+    console.log('Selected model:', model);
+
     if (!message || typeof message !== 'string' || message.trim() === '') {
       return jsonResponse(400, {
         error: 'Message is required',
@@ -79,6 +81,8 @@ export async function handler(event, context) {
     switch (model) {
       case 'claude-3-haiku':
         const claudeApiKey = process.env.ANTHROPIC_API_KEY;
+        console.log('Claude API Key check:', claudeApiKey ? 'Found' : 'Not found');
+        
         if (!claudeApiKey) {
           return jsonResponse(500, {
             error: 'Claude API key not configured',
@@ -87,6 +91,7 @@ export async function handler(event, context) {
         }
 
         try {
+          console.log('Calling Claude API...');
           response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
@@ -102,30 +107,42 @@ export async function handler(event, context) {
             })
           });
 
+          console.log('Claude API response status:', response.status);
+
           if (!response.ok) {
-            throw new Error(`Claude API error: ${response.status}`);
+            const errorData = await response.text();
+            console.error('Claude API Error:', errorData);
+            throw new Error(`Claude API error: ${response.status} - ${errorData}`);
           }
 
           data = await response.json();
           rawText = data.content[0].text;
           modelName = 'claude-3-haiku-20240307';
+          console.log('Claude API success');
+          return processResponse(rawText, modelName, message);
         } catch (error) {
-          console.error('Claude API failed, falling back to Gemini:', error);
-          // Fallback to Gemini
-          return await callGeminiAPI(message);
+          console.error('Claude API failed:', error);
+          return jsonResponse(500, {
+            error: 'Claude API failed',
+            message: error.message,
+            success: false
+          });
         }
-        break;
 
       case 'glm-4-flash':
-        const glmApiKey = process.env.GLM_API_KEY;
+        // Gunakan ZHIPUAI_API_KEY sesuai dengan yang ada di Netlify
+        const glmApiKey = process.env.ZHIPUAI_API_KEY;
+        console.log('GLM API Key check:', glmApiKey ? 'Found' : 'Not found');
+        
         if (!glmApiKey) {
           return jsonResponse(500, {
             error: 'GLM API key not configured',
-            message: 'GLM_API_KEY tidak ditemukan di environment variables Netlify'
+            message: 'ZHIPUAI_API_KEY tidak ditemukan di environment variables Netlify'
           });
         }
 
         try {
+          console.log('Calling GLM API...');
           response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
             method: 'POST',
             headers: {
@@ -140,22 +157,31 @@ export async function handler(event, context) {
             })
           });
 
+          console.log('GLM API response status:', response.status);
+
           if (!response.ok) {
-            throw new Error(`GLM API error: ${response.status}`);
+            const errorData = await response.text();
+            console.error('GLM API Error:', errorData);
+            throw new Error(`GLM API error: ${response.status} - ${errorData}`);
           }
 
           data = await response.json();
           rawText = data.choices[0].message.content;
           modelName = 'glm-4-flash';
+          console.log('GLM API success');
+          return processResponse(rawText, modelName, message);
         } catch (error) {
-          console.error('GLM API failed, falling back to Gemini:', error);
-          // Fallback to Gemini
-          return await callGeminiAPI(message);
+          console.error('GLM API failed:', error);
+          return jsonResponse(500, {
+            error: 'GLM API failed',
+            message: error.message,
+            success: false
+          });
         }
-        break;
 
       case 'gemini-1.5-flash':
       default:
+        console.log('Using Gemini API...');
         return await callGeminiAPI(message);
     }
 
@@ -293,8 +319,13 @@ export async function handler(event, context) {
       });
     }
 
-    // Process the response for non-Gemini models
-    return processResponse(rawText, modelName, message);
+    // This should not be reached due to the switch statement handling above
+    console.error('Unexpected execution path');
+    return jsonResponse(500, {
+      error: 'Unexpected error',
+      message: 'Model processing error',
+      success: false
+    });
 
   } catch (error) {
     console.error('Chat function error:', error);
