@@ -150,7 +150,7 @@ export async function handler(event, context) {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              model: 'glm-4-flash',
+              model: 'glm-4.5-flash',
               messages: [{ role: 'user', content: message.trim() }],
               max_tokens: 1000,
               temperature: 0.7,
@@ -168,7 +168,7 @@ export async function handler(event, context) {
 
           data = await response.json();
           rawText = data.choices[0].message.content;
-          modelName = 'glm-4-flash';
+          modelName = 'glm-4.5-flash';
           console.log('GLM API success');
           return processResponse(rawText, modelName, message);
         } catch (error) {

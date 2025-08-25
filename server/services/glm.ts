@@ -73,7 +73,7 @@ export async function createGLMChatCompletion(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "glm-4-flash",
+        model: "glm-4.5-flash",
         messages: glmMessages,
         max_tokens: request.maxTokens || 1000,
         temperature: request.temperature || 0.7,
@@ -101,7 +101,7 @@ export async function createGLMChatCompletion(
         completion_tokens: data.usage?.completion_tokens || Math.ceil(cleanedText.length / 4),
         total_tokens: data.usage?.total_tokens || Math.ceil((request.messages.reduce((sum, msg) => sum + msg.content.length, 0) + cleanedText.length) / 4),
       },
-      model: "glm-4-flash",
+      model: "glm-4.5-flash",
     };
   } catch (error) {
     console.error("GLM API Error:", error);
