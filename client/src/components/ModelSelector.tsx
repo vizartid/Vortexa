@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Bot } from 'lucide-react';
+
 
 interface ModelSelectorProps {
   selectedModel?: string;
@@ -38,8 +38,7 @@ export function ModelSelector({ selectedModel = "gemini-1.5-flash", onModelChang
   };
 
   return (
-    <div className={`flex items-center space-x-2 ${className}`}>
-      <Bot className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+    <div className={`flex items-center ${className}`}>
       <Select value={selectedModel} onValueChange={handleModelChange}>
         <SelectTrigger className="w-[220px] min-w-[220px]">
           <SelectValue placeholder="Select AI Model" className="truncate" />
