@@ -17,7 +17,7 @@ A intelligent AI chatbot assistant with multi-model support, built using React, 
 - **Frontend**: React 18, TypeScript, Tailwind CSS, shadcn/ui
 - **AI Models**:
 - Google Gemini 1.5 Flash
-- Anthropic Claude Haiku 
+- Anthropic Claude 
 - Zhipu GLM-4.5 Flash
 - **Build Tool**: Vite
 - **Deployment**: Netlify Functions (Serverless)
