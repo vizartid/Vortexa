@@ -4,7 +4,7 @@ A intelligent AI chatbot assistant with multi-model support, built using React, 
 
 ## 🚀 Features
 
-- 🤖 **Multi-Model AI Support**: Support for Gemini 1.5 Flash, Claude Haiku, and GLM-4.5 Flash
+- 🤖 **Multi-Model AI Support**: Support for Gemini 1.5 Flash, Claude Haiku, and GLM-4.5 Flash and more coming soon
 - 💬 **Real-time Chat Interface**: Responsive and modern chat interface
 - 📱 **Responsive Design**: Optimized for desktop and mobile
 - 🎨 **Modern UI**: Uses Tailwind CSS with shadcn/ui components
